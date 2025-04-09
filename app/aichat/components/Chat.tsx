@@ -378,8 +378,7 @@ const MessageInput = ({
       event.preventDefault();
       // ✅ Alert if no files selected
       if (!selectedBlobs || selectedBlobs.length === 0) {
-        toast.error('Please select at least one document before sending a question.');
-        return;
+        toast.warning('No document selected, proceeding with general chat...');
       }
       handleSubmit(event);
     }
@@ -432,8 +431,7 @@ const MessageInput = ({
                 e.preventDefault();
                 // ✅ Alert if no files selected
                 if (!selectedBlobs || selectedBlobs.length === 0) {
-                  toast.error('Please select at least one document before sending a question.');
-                  return;
+                  toast.warning('No document selected, proceeding with general chat...');
                 }
                 handleSubmit(event);
               }}
