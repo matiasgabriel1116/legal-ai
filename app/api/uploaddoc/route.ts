@@ -9,6 +9,7 @@ export const maxDuration = 60;
 const supabaseAdmin = createAdminClient();
 
 export async function POST(req: NextRequest) {
+  console.log("OKAY")
   try {
     // Check for Llama Cloud API key
     if (!process.env.LLAMA_CLOUD_API_KEY) {

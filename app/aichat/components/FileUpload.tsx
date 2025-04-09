@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import type { FileRejection, FileWithPath } from 'react-dropzone';
 import { useDropzone } from 'react-dropzone';
 import { useUpload } from '../context/uploadContext';
@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const SUPPORTED_FILE_TYPES: Record<string, string[]> = {
   'application/pdf': ['.pdf', '.PDF'],
@@ -22,6 +23,7 @@ const SUPPORTED_FILE_TYPES: Record<string, string[]> = {
 };
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB in bytes
+const MAX_TOTAL_FILES = 10; // Maximum number of files to upload at once
 
 function LinearProgressWithLabel({
   value,
@@ -75,13 +77,22 @@ export default function ServerUploadPage() {
     uploadProgress,
     uploadStatus,
     statusSeverity,
-    selectedFile,
-    setSelectedFile
+    selectedFiles,
+    setSelectedFiles
   } = useUpload();
 
   const validateFile = useCallback(
     (file: FileWithPath | null, fileRejections: FileRejection[]) => {
       if (fileRejections.length > 0) {
+        fileRejections.forEach((rejection) => {
+          rejection.errors.forEach((error) => {
+            if (error.code === 'file-too-large') {
+              alert(`File is too large. Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)}MB`);
+            } else if (error.code === 'file-invalid-type') {
+              alert('File type not supported. Please upload PDF or DOCX files.');
+            }
+          });
+        });
         return false;
       }
       return true;
@@ -91,24 +102,28 @@ export default function ServerUploadPage() {
 
   const onDrop = useCallback(
     (acceptedFiles: FileWithPath[], fileRejections: FileRejection[]) => {
-      const file = acceptedFiles[0] || null;
-      if (validateFile(file, fileRejections)) {
-        setSelectedFile(file);
+      if (!validateFile(acceptedFiles[0], fileRejections)) return;
+
+      const newFiles = acceptedFiles.slice(0, MAX_TOTAL_FILES - (selectedFiles?.length || 0));
+      if (newFiles.length < acceptedFiles.length) {
+        alert(`You can upload up to ${MAX_TOTAL_FILES} files at once.`);
       }
+
+      setSelectedFiles(prev => [...(prev || []), ...newFiles]);
     },
-    [setSelectedFile, validateFile]
+    [selectedFiles, setSelectedFiles, validateFile]
   );
 
-  const handleRemoveFile = () => {
-    setSelectedFile(null);
+  const handleRemoveFile = (index: number) => {
+    setSelectedFiles(prev => prev?.filter((_, i) => i !== index) || null);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!selectedFile) return;
+    if (!selectedFiles || selectedFiles.length === 0) return;
 
     try {
-      await uploadFile(selectedFile);
+      await uploadFile(selectedFiles);
     } finally {
       formRef.current?.reset();
     }
@@ -118,7 +133,7 @@ export default function ServerUploadPage() {
     onDrop,
     accept: SUPPORTED_FILE_TYPES,
     maxSize: MAX_FILE_SIZE,
-    multiple: false
+    multiple: true
   });
 
   return (
@@ -149,7 +164,7 @@ export default function ServerUploadPage() {
               isDragActive ? 'text-primary' : 'text-foreground'
             } transition-colors duration-200`}
           >
-            {isDragActive ? 'Drop the file here...' : 'Drag files here'}
+            {isDragActive ? 'Drop files here...' : 'Drag files here'}
           </h6>
           <p className="text-muted-foreground mb-0.5">Or</p>
           <Button
@@ -160,7 +175,7 @@ export default function ServerUploadPage() {
             Browse
           </Button>
           <p className="text-muted-foreground mt-1 text-sm">
-            Supported formats: PDF, DOCX
+            Supported formats: PDF, DOCX (Max {MAX_TOTAL_FILES} files)
           </p>
           <p className="text-muted-foreground/70 text-xs mt-0.5 italic">
             Note that files with more than approximately 600 pages are not
@@ -169,56 +184,85 @@ export default function ServerUploadPage() {
         </div>
       </div>
 
-      {selectedFile && (
-        <Card className="bg-card/50 p-4 mb-4 rounded-lg shadow-none">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">
-                <DescriptionIcon className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 max-w-[80%]">
-                <p className="text-foreground font-medium overflow-hidden line-clamp-2 break-words leading-tight mb-0.5">
-                  {selectedFile.name}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRemoveFile}
-              disabled={isUploading}
-              className="text-foreground hover:text-primary"
-            >
-              <CloseIcon className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="mt-2">
-            <LinearProgressWithLabel
-              value={uploadProgress}
-              status={uploadStatus}
-            />
-            {uploadStatus && statusSeverity !== 'info' && (
-              <Alert
-                variant={statusSeverity === 'error' ? 'destructive' : 'default'}
-                className="mt-1 rounded-lg"
+      <AnimatePresence>
+        {selectedFiles && selectedFiles.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-2 mb-4"
+          >
+            {selectedFiles.map((file, index) => (
+              <motion.div
+                key={`${file.name}-${index}`}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                layout
               >
-                <AlertDescription>{uploadStatus}</AlertDescription>
-              </Alert>
-            )}
-          </div>
-        </Card>
+                <Card className="bg-card/50 p-4 rounded-lg shadow-none">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">
+                        <DescriptionIcon className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 max-w-[80%]">
+                        <p className="text-foreground font-medium overflow-hidden line-clamp-2 break-words leading-tight mb-0.5">
+                          {file.name}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {(file.size / (1024 * 1024)).toFixed(2)} MB
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveFile(index);
+                      }}
+                      disabled={isUploading}
+                      className="text-foreground hover:text-primary"
+                    >
+                      <CloseIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {selectedFiles && selectedFiles.length > 0 && (
+        <div className="mt-2">
+          <LinearProgressWithLabel
+            value={uploadProgress}
+            status={uploadStatus}
+          />
+          {uploadStatus && statusSeverity !== 'info' && (
+            <Alert
+              variant={statusSeverity === 'error' ? 'destructive' : 'default'}
+              className="mt-1 rounded-lg"
+            >
+              <AlertDescription>{uploadStatus}</AlertDescription>
+            </Alert>
+          )}
+        </div>
       )}
 
       <Button
         type="submit"
-        disabled={isUploading || !selectedFile}
+        disabled={isUploading || !selectedFiles || selectedFiles.length === 0}
         className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base font-semibold rounded-lg py-2 disabled:opacity-50"
       >
         <CloudUploadIcon className="mr-2 h-5 w-5" />
-        {isUploading ? 'Uploading...' : 'Upload File'}
+        {isUploading 
+          ? `Uploading ${selectedFiles?.length || 0} file${selectedFiles?.length !== 1 ? 's' : ''}...` 
+          : `Upload ${selectedFiles?.length || 0} file${selectedFiles?.length !== 1 ? 's' : ''}`}
       </Button>
     </form>
   );
