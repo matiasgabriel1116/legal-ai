@@ -103,12 +103,10 @@ interface FileObject {
 
 const fetcher = async (userId: string) => {
   const supabase = createClient();
-  const { data: files, error } = await supabase.rpc('list_objects', {
-    bucketid: 'userfiles',
-    prefix: `${userId}/`,
-    limits: 1000,
-    offsets: 0
-  });
+  const { data: files, error } = await supabase
+   .storage
+   .from('userfiles')
+   .list(`${userId}/`, { limit: 1000 });
 
   if (error) {
     console.error('Error fetching user files:', error);
