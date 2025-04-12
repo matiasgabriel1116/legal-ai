@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 
 interface UploadContextType {
   isUploading: boolean;
-  uploadFile: (files: File[]) => Promise<void>;
+  uploadFiles: (files: File[]) => Promise<void>;
   uploadProgress: number;
   uploadStatus: string;
   statusSeverity: string;
@@ -47,7 +47,7 @@ export const UploadProvider: React.FC<{
   const [uploadStatus, setUploadStatus] = useState('');
   const [statusSeverity, setStatusSeverity] = useState<string>('info');
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
-  const [currentFileNames, setCurrentFileNames] = useState<string[]>([]);
+  const [currentFileName, setCurrentFileName] = useState<string>('');
   const [shouldProcessDoc, setShouldProcessDoc] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[] | null>(null);
   const [selectedBlobs, setSelectedBlobs] = useState<string[]>([]);
@@ -76,25 +76,29 @@ export const UploadProvider: React.FC<{
   );
 
   const { data: processDocResult, error: processDocError } = useSWR(
-    shouldProcessDoc && currentJobId && currentFileNames.length > 0
-      ? ['/api/processdoc', currentJobId, currentFileNames]
+    shouldProcessDoc && currentJobId && currentFileName
+      ? ['/api/processdoc', currentJobId, currentFileName]
       : null,
-    async ([url, jobId, fileNames]) => {
+    async ([url, jobId, fileName]) => {
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ jobId, fileNames })
+        body: JSON.stringify({ jobId, fileName })
       });
+
+      console.log("@@@ useSWR/fetch_url => ", url)
+      console.log("@@@ useSWR/fetch_response => ", response)
       if (!response.ok) {
         throw new Error('Failed to process document');
       }
+      
       return response.json();
     }
   );
 
-  const uploadFile = useCallback(
+  const uploadFiles = useCallback(
     async (files: File[]) => {
       setIsUploading(true);
       setUploadProgress(0);
@@ -122,6 +126,7 @@ export const UploadProvider: React.FC<{
       const uploadToSupabase = async (file: File, userId: string) => {
         const fileNameWithUnderscores = file.name.replace(/ /g, '_').trim();
         const encodedFileName = encodeBase64(fileNameWithUnderscores);
+        console.log("@@@ supabase/input-encodedFileName => ", encodedFileName)
         const filePath = `${userId}/${encodedFileName}`;
         
         console.log("OKAY!", filePath);
@@ -157,7 +162,10 @@ export const UploadProvider: React.FC<{
 
         // Upload all files first
         for (const file of files) {
+          console.log("file.size => ", file.size)
+          console.log("file => ", file)
           const path = await uploadToSupabase(file, userId);
+          setUploadProgress((prev) => prev + (25 / uploadFileCount));
           uploadedFilePaths.push(path);
         }
 
@@ -165,42 +173,42 @@ export const UploadProvider: React.FC<{
           file.name.replace(/ /g, '_').trim()
         );
 
-        setUploadProgress((prev) => prev + (25 / uploadFileCount));
         setUploadStatus('Preparing files for analysis...');
-
-        const response = await fetch('/api/uploaddoc', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            uploadedFiles: fileNamesWithUnderscores.map((name, i) => ({
-              name,
-              path: uploadedFilePaths[i]
-            }))
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error(
-            `Error processing files on server: ${response.statusText}`
+        for (const i in uploadedFilePaths) {
+          const response = await fetch('/api/uploaddoc', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(
+              {
+                name: fileNamesWithUnderscores[i],
+                path: uploadedFilePaths[i],
+              })
+            }
           );
-        }
 
-        const result = await response.json();
-        setUploadProgress((prev) => prev + (25 / uploadFileCount));
+          if (!response.ok) {
+            throw new Error(
+              `Error processing files on server: ${response.statusText}`
+            );
+          }
+
+          const result = await response.json();
+          setUploadProgress((prev) => prev + 25 / uploadFileCount);
+          
+          if (result.results[0]?.jobId) {
+            setCurrentJobId(result.results[0].jobId);
+            setCurrentFileName(result.results[0].jobId);
+          } else {
+            throw new Error('No job ID received from server.');
+          }
+        }
         setUploadStatus('Analyzing files...');
-
-        if (result.results[0]?.jobId) {
-          setCurrentJobId(result.results[0].jobId);
-          setCurrentFileNames(files.map(file => file.name));
-        } else {
-          throw new Error('No job ID received from server.');
-        }
       } catch (error) {
         console.error('Error uploading files:', error);
 
-        // Clean up any uploaded files if there was an error
+        // Clean up any   uploaded files if there was an error
         if (uploadedFilePaths.length > 0) {
           try {
             const { error: deleteError } = await supabase.storage
@@ -243,7 +251,7 @@ export const UploadProvider: React.FC<{
     setUploadStatus('');
     setStatusSeverity('info');
     setCurrentJobId(null);
-    setCurrentFileNames([]);
+    setCurrentFileName([]);
     setShouldProcessDoc(false);
     setSelectedFiles(null);
   };
@@ -262,7 +270,7 @@ export const UploadProvider: React.FC<{
       setUploadStatus('Error analyzing files.');
       setStatusSeverity('error');
       setCurrentJobId(null);
-      setCurrentFileNames([]);
+      setCurrentFileName([]);
       setShouldProcessDoc(false);
     }
 
@@ -278,22 +286,22 @@ export const UploadProvider: React.FC<{
           resetUploadState();
         }, 3000);
       } else {
-        // setIsUploading(false);
-        // setUploadStatus('Error finalizing files.');
-        // setStatusSeverity('error');
-        // setCurrentJobId(null);
-        // setCurrentFileNames([]);
-        // setShouldProcessDoc(false);
-        toast.error('Successfully Uploaded, but Processing Document Engine is Not Completed Yet...');
+        setIsUploading(false);
+        setUploadStatus('Error finalizing files.');
+        setStatusSeverity('error');
+        setCurrentJobId(null);
+        setCurrentFileName([]);
+        setShouldProcessDoc(false);
+        // toast.error('Successfully Uploaded, but Processing Document Engine is Not Completed Yet...');
       }
     } else if (processDocError) {
-      // setIsUploading(false);
-      // setUploadStatus('Error finalizing files.');
-      // setStatusSeverity('error');
-      // setCurrentJobId(null);
-      // setCurrentFileNames([]);
-      // setShouldProcessDoc(false);
-      toast.error('Successfully Uploaded, but Processing Document Engine is Not Completed Yet...');
+      setIsUploading(false);
+      setUploadStatus('Error finalizing files.');
+      setStatusSeverity('error');
+      setCurrentJobId(null);
+      setCurrentFileName([]);
+      setShouldProcessDoc(false);
+      // toast.error('Successfully Uploaded, but Processing Document Engine is Not Completed Yet...');
     }
   }, [
     processingStatus,
@@ -306,7 +314,7 @@ export const UploadProvider: React.FC<{
   const contextValue = useMemo(
     () => ({
       isUploading,
-      uploadFile,
+      uploadFiles,
       uploadProgress,
       uploadStatus,
       statusSeverity,
@@ -317,7 +325,7 @@ export const UploadProvider: React.FC<{
     }),
     [
       isUploading,
-      uploadFile,
+      uploadFiles,
       uploadProgress,
       uploadStatus,
       statusSeverity,

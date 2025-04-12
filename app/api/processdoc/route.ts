@@ -1,37 +1,34 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { embed } from 'ai';
 import { getSession } from '@/lib/server/supabase';
 import { createAdminClient } from '@/lib/server/admin';
 import { format } from 'date-fns';
 import { TZDate } from '@date-fns/tz';
 import {
   preliminaryAnswerChainAgent,
-  generateDocumentMetadata
+  generateDocumentMetadata,
+  generateEmbeddings
 } from './agentchains';
-import { voyage } from 'voyage-ai-provider';
+import { pipeline } from '@xenova/transformers';
 
 export const dynamic = 'force-dynamic';
-
 export const maxDuration = 60;
 
-const embeddingModel = voyage.textEmbeddingModel('voyage-3-large', {
-  inputType: 'document',
-  truncation: false,
-  outputDimension: 1024,
-  outputDtype: 'int8'
-});
-
 function sanitizeFilename(filename: string): string {
-  const sanitized = filename
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9._-]/g, '_');
-  return sanitized;
+  // Fallback for missing String.prototype.normalize
+  console.log("@@@ filename => ", filename  )
+  const normalized = typeof filename.normalize === 'function' 
+    ? filename.normalize('NFD') 
+    : filename;
+  
+  return normalized
+    .replace(/[^\w.-]/g, '_') // Combined replacement
+    .replace(/_+/g, '_')      // Collapse multiple underscores
+    .replace(/^_+|_+$/g, ''); // Trim leading/trailing underscores
 }
 
 interface DocumentRecord {
   user_id: string;
-  embedding: string; // Changed from number[] to string
+  embedding: string;
   text_content: string;
   title: string;
   timestamp: string;
@@ -49,6 +46,7 @@ interface DocumentRecord {
 
 async function processFile(pages: string[], fileName: string, userId: string) {
   let selectedDocuments = pages;
+  console.log("@@@ processFile->fileName => ", fileName)
   if (pages.length > 19) {
     selectedDocuments = [...pages.slice(0, 10), ...pages.slice(-10)];
   }
@@ -137,14 +135,10 @@ async function processFile(pages: string[], fileName: string, userId: string) {
       ${doc}
       `;
 
-          // FIXED: Generate a single embedding for the entire content
-          // instead of iterating character by character
           try {
-            const { embedding } = await embed({
-              model: embeddingModel,
-              value: combinedContent
-            });
-
+            // Use the generateEmbeddings function from agentchains
+            const embedding = await generateEmbeddings(combinedContent);
+            
             if (!embedding) {
               console.log('No embedding generated, skipping document');
               return;
@@ -152,7 +146,7 @@ async function processFile(pages: string[], fileName: string, userId: string) {
 
             batchRecords.push({
               user_id: userId,
-              embedding: `[${embedding.join(',')}]`,
+              embedding: JSON.stringify(embedding), // Stringify the array
               text_content: doc,
               title: fileName,
               timestamp,
@@ -164,8 +158,8 @@ async function processFile(pages: string[], fileName: string, userId: string) {
               filter_tags: filterTags,
               page_number: pageNumber,
               total_pages: totalPages,
-              chunk_number: 1, // Since we're now treating each page as one document
-              total_chunks: 1 // Since we're now treating each page as one document
+              chunk_number: 1,
+              total_chunks: 1
             });
           } catch (embedError) {
             console.error(
@@ -179,9 +173,7 @@ async function processFile(pages: string[], fileName: string, userId: string) {
       })
     );
 
-    // Only attempt to upsert if we have records
     if (batchRecords.length > 0) {
-      // Upsert records in batches
       const upsertBatches = chunks(batchRecords, upsertBatchSize);
       console.log(`Processing ${upsertBatches.length} upsert batches`);
 
@@ -191,8 +183,7 @@ async function processFile(pages: string[], fileName: string, userId: string) {
           const { error } = await supabase
             .from('vector_documents')
             .upsert(batch, {
-              onConflict:
-                'user_id, title, timestamp, page_number, chunk_number',
+              onConflict: 'user_id, title, timestamp, page_number, chunk_number',
               ignoreDuplicates: false
             });
 
@@ -211,7 +202,6 @@ async function processFile(pages: string[], fileName: string, userId: string) {
       console.warn('No records to upsert for this batch');
     }
 
-    // Clear batch records for next iteration
     batchRecords = [];
   }
 
@@ -241,8 +231,7 @@ async function processDocumentWithAgentChains(
 
     const { object, usage } = result;
     console.log('Result:', object);
-    // If tags is potentially undefined, use nullish coalescing
-    const tagTaxProvisions = object.tags.join(', ') || '';
+    const tagTaxProvisions = object.tags?.join(', ') || '';
 
     const combinedPreliminaryAnswers = [
       object.preliminary_answer_1,
@@ -277,17 +266,9 @@ async function processDocumentWithAgentChains(
     };
   }
 }
+
 export async function POST(req: NextRequest) {
   try {
-    // Check for Llama Cloud API key
-    if (!process.env.LLAMA_CLOUD_API_KEY) {
-      console.error('LLAMA_CLOUD_API_KEY is not configured');
-      return NextResponse.json(
-        { error: 'Server configuration error: LLAMA_CLOUD_API_KEY is missing' },
-        { status: 500 }
-      );
-    }
-
     const session = await getSession();
     if (!session) {
       return NextResponse.json(
@@ -300,38 +281,48 @@ export async function POST(req: NextRequest) {
 
     const { jobId, fileName } = await req.json();
 
-    const markdownResponse = await fetch(
-      `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${jobId}/result/markdown`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.LLAMA_CLOUD_API_KEY}`,
-          Accept: 'application/json'
-        }
-      }
-    );
+    console.log("@@@ req->fileName => ", fileName)
 
-    if (!markdownResponse.ok) {
-      console.error(
-        'Failed to get Markdown result:',
-        markdownResponse.statusText
-      );
-      return NextResponse.json(
+    // Check if we're using Llama Cloud or local processing
+    if (process.env.LLAMA_CLOUD_API_KEY) {
+      const markdownResponse = await fetch(
+        `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${jobId}/result/markdown`,
         {
-          error: `Failed to get Markdown result: ${markdownResponse.statusText}`
-        },
-        { status: 500 }
+          headers: {
+            Authorization: `Bearer ${process.env.LLAMA_CLOUD_API_KEY}`,
+            Accept: 'application/json'
+          }
+        }
+      );
+
+      if (!markdownResponse.ok) {
+        console.error(
+          'Failed to get Markdown result:',
+          markdownResponse.statusText
+        );
+        return NextResponse.json(
+          {
+            error: `Failed to get Markdown result: ${markdownResponse.statusText}`
+          },
+          { status: 500 }
+        );
+      }
+
+      const markdown = await markdownResponse.text();
+      const pages = markdown
+        .split('\\n---\\n')
+        .map((page) => page.trim())
+        .filter((page) => page !== '');
+      
+      const filterTags = await processFile(pages, fileName, userId);
+      return NextResponse.json({ status: 'SUCCESS', filterTags });
+    } else {
+      // Local file processing (if you implement this later)
+      return NextResponse.json(
+        { error: 'Local file processing not yet implemented' },
+        { status: 501 }
       );
     }
-
-    const markdown = await markdownResponse.text();
-    const pages = markdown
-      .split('\\n---\\n')
-      .map((page) => page.trim())
-      .filter((page) => page !== '');
-
-    const filterTags = await processFile(pages, fileName, userId);
-
-    return NextResponse.json({ status: 'SUCCESS', filterTags });
   } catch (error) {
     console.error('Error in POST request:', error);
     return NextResponse.json(

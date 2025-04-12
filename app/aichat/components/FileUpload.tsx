@@ -73,7 +73,7 @@ export default function ServerUploadPage() {
   const formRef = useRef<HTMLFormElement | null>(null);
   const {
     isUploading,
-    uploadFile,
+    uploadFiles,
     uploadProgress,
     uploadStatus,
     statusSeverity,
@@ -123,7 +123,7 @@ export default function ServerUploadPage() {
     if (!selectedFiles || selectedFiles.length === 0) return;
 
     try {
-      await uploadFile(selectedFiles);
+      await uploadFiles(selectedFiles);
     } finally {
       formRef.current?.reset();
     }
