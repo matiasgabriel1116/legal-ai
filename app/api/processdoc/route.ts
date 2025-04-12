@@ -57,6 +57,8 @@ async function processFile(pages: string[], fileName: string, userId: string) {
     userId
   );
 
+  console.log('@@@ Document metadata object:', object); // Add this to verify structure
+
   const now = new TZDate(new Date(), 'Europe/Copenhagen');
   const timestamp = format(now, 'yyyy-MM-dd');
   const sanitizedFilename = sanitizeFilename(fileName);
@@ -102,7 +104,7 @@ async function processFile(pages: string[], fileName: string, userId: string) {
               doc,
               object.descriptiveTitle,
               object.shortDescription,
-              object.mainTopics,
+              object.mainTopics || [],
               userId
             );
 
@@ -219,12 +221,16 @@ async function processDocumentWithAgentChains(
   combinedPreliminaryAnswers: string;
   usage: { promptTokens: number; completionTokens: number };
 }> {
+
+  console.log("@@@ ai_maintopics => ", ai_maintopics);
   const prompt = `
   Title: ${ai_title}
   Description: ${ai_description}
-  Main Topics: ${ai_maintopics.join(', ')}
+  ${ai_maintopics ? `Main Topics: ${ai_maintopics.join(', ')}` : ''}
   Document: ${doc}
   `;
+
+  console.log("@@@ prompt => ", prompt);
 
   try {
     const result = await preliminaryAnswerChainAgent(prompt, userId);
