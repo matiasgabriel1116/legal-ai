@@ -33,11 +33,10 @@ function LinearProgressWithLabel({
   status: string;
 }) {
   const statusesWithSpinner = [
-    'Uploading file...',
-    'Preparing file for analysis...',
-    'Analyzing file...',
-    'Finalizing files...',
-    'Still analyzing files...'
+    'Initializing...',
+    'Uploading...',
+    'Analyzing...',
+    'Saving to Database...',
   ];
 
   const shouldShowSpinner = statusesWithSpinner.includes(status);
