@@ -116,10 +116,11 @@ export const UploadProvider: React.FC<{
   const uploadFiles = useCallback(async (files: File[]) => {
     setIsUploading(true);
     setUploadProgress(0);
-    await setUploadFileCount(files.length);
+    setUploadFileCount(files.length);
 
-    console.log(files.length)
-    updateUploadStatus(`Uploading ${files.length} file${files.length !== 1 ? 's' : ''}...`);
+    console.log("@@@ files.length => ", files.length)
+    console.log("@@@ uploadFileCount => ", uploadFileCount)
+    updateUploadStatus(`Initializing...`);
 
     const uploadedFilePaths: string[] = [];
 
@@ -136,12 +137,12 @@ export const UploadProvider: React.FC<{
       for (const [index, file] of files.entries()) {
         const path = await uploadToSupabase(file, userId);
         uploadedFilePaths.push(path);
-        setUploadProgress(prev => prev + (25 / uploadFileCount));
-        updateUploadStatus(`Uploading file ${index + 1} of ${uploadFileCount}...`);
+        setUploadProgress(prev => prev + (50 / files.length));
+        updateUploadStatus(`Uploading file ${index + 1} of ${files.length}...`);
       }
 
       // Process files
-      updateUploadStatus('Preparing files for analysis...');
+      updateUploadStatus('Analyzing...');
       const fileNamesWithUnderscores = files.map(file => file.name.replace(/ /g, '_').trim());
 
       for (const [index, fileName] of fileNamesWithUnderscores.entries()) {
@@ -160,7 +161,7 @@ export const UploadProvider: React.FC<{
 
         const result = await response.json();
         console.log("@@@ result => ", result)
-        setUploadProgress(prev => prev + (25 / uploadFileCount));
+        setUploadProgress(prev => prev + (30 / files.length));
         
         if (result.jobId) {
           setCurrentJobId(result.jobId);
@@ -169,8 +170,6 @@ export const UploadProvider: React.FC<{
           throw new Error('No job ID received from server');
         }
       }
-
-      updateUploadStatus('Analyzing files...');
     } catch (error) {
       console.error('Error in uploadFiles:', error);
 
@@ -205,6 +204,7 @@ export const UploadProvider: React.FC<{
     setCurrentFileName('');
     setShouldProcessDoc(false);
     setSelectedFiles(null);
+    setUploadFileCount(1);
   }, []);
 
   // Maintain original SWR hooks
@@ -242,8 +242,8 @@ export const UploadProvider: React.FC<{
   useEffect(() => {
     if (processingStatus) {
       if (processingStatus.status === 'SUCCESS') {
-        setUploadProgress(prev => prev + (25 / uploadFileCount));
-        updateUploadStatus('Finalizing files...');
+        setUploadProgress(prev => Math.min(prev + (10 / uploadFileCount), 80));
+        updateUploadStatus('Saving to Database...');
         setShouldProcessDoc(true);
       } else if (processingStatus.status === 'PENDING') {
         updateUploadStatus('Still analyzing files...');
@@ -261,8 +261,8 @@ export const UploadProvider: React.FC<{
     if (processDocResult) {
       if (processDocResult.status === 'SUCCESS') {
         setIsUploading(false);
-        setUploadProgress(prev => prev + (25 / uploadFileCount));
-        updateUploadStatus('Files uploaded and processed', 'success');
+        setUploadProgress(100);
+        updateUploadStatus('Successfully uploaded!', 'success');
         mutate(`userFiles`);
 
         setTimeout(() => {
