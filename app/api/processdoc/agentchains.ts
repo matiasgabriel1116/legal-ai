@@ -94,7 +94,7 @@ const getTextModel = async (): Promise<Pipeline> => {
 // ===== Embedding Model ===== //
 const getEmbeddingModel = async (): Promise<Pipeline> => {
   if (!_embeddingModel) {
-    const modelName = 'BAAI/bge-large-en-v1.5';
+    const modelName = 'aubmindlab/bert-base-arabertv02';
 
     const loadModel = async (config: EmbeddingModelConfig): Promise<Pipeline> => {
       try {

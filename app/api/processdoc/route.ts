@@ -236,7 +236,7 @@ async function processDocumentWithAgentChains(
     const result = await preliminaryAnswerChainAgent(prompt, userId);
 
     const { object, usage } = result;
-    console.log('Result:', object);
+    console.log('@@@ Result from preliminaryAnswerChain:', object);
     const tagTaxProvisions = object.tags?.join(', ') || '';
 
     const combinedPreliminaryAnswers = [
