@@ -44,13 +44,13 @@ let _embeddingModel: Pipeline | null = null;
 // ===== Text Generation Model ===== //
 const getTextModel = async (): Promise<Pipeline> => {
   if (!_textModel) {
-    const modelName = 'Xenova/TinyLlama-1.1B-Chat-v1.0-int8';
+    const modelName = 'Xenova/TinyLlama-1.1B-Chat-v1.0';
     const fallbackModel = 'Xenova/phi-2';
 
     const loadModel = async (model: string, config: TextModelConfig): Promise<Pipeline> => {
       try {
         console.log(`Attempting to load ${model}...`);
-        return await pipeline('text-generation', model, config as Parameters<typeof pipeline>[2]);
+        return await pipeline('text-generation', model, config);
       } catch (error) {
         console.error(`Failed to load ${model}:`, error);
         throw error;
@@ -316,29 +316,44 @@ export const generateDocumentMetadata = async (
         do_sample: false
       });
   
-      console.log("@@@ response from embedding model => ", response);
-      // Extract JSON from response
+      console.log("Raw response from the model:", response);
+  
       const rawText = response[0].generated_text;
-      const jsonStart = rawText.indexOf('{');
-      const jsonEnd = rawText.lastIndexOf('}') + 1;
-      
-      if (jsonStart === -1 || jsonEnd === 0) {
+  
+      // Attempt to extract JSON using regular expression
+      const jsonMatch = rawText.match(/{.*}/s); // Match JSON from the start of the first curly brace to the last
+      if (!jsonMatch) {
         throw new Error('No valid JSON found in response');
       }
   
-      const jsonString = rawText.slice(jsonStart, jsonEnd);
-      console.log("Extracted JSON:", jsonString); // Debug log
-      
-      const result = documentMetadataSchema.parse(JSON.parse(jsonString));
-      console.log("@@@ result from schema => ", result);
-      
-      return {
-        object: result,
-        usage: {
-          promptTokens: content.length,
-          completionTokens: response[0].generated_text.length
-        }
-      };
+      const jsonString = jsonMatch[0]; // Extract the matched JSON string
+      console.log("Extracted JSON:", jsonString);
+  
+      let parsedJson;
+      try {
+        parsedJson = JSON.parse(jsonString);
+      } catch (error) {
+        throw new Error(`Error parsing JSON: ${error.message}`);
+      }
+  
+      console.log("Parsed JSON before schema validation:", parsedJson);
+  
+      // Now validate with the schema
+      try {
+        const result = documentMetadataSchema.parse(parsedJson);
+        console.log("@@@ result from schema => ", result);
+  
+        return {
+          object: result,
+          usage: {
+            promptTokens: content.length,
+            completionTokens: response[0].generated_text.length
+          }
+        };
+      } catch (schemaError) {
+        console.error('Error validating the parsed JSON with schema:', schemaError);
+        throw new Error(`Schema validation failed: ${schemaError.message}`);
+      }
     } catch (error) {
       console.error('Error in generateDocumentMetadata:', {
         error: error instanceof Error ? error.message : 'Unknown error'

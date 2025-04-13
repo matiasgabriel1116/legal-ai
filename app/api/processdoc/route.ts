@@ -139,7 +139,10 @@ async function processFile(pages: string[], fileName: string, userId: string) {
 
           try {
             // Use the generateEmbeddings function from agentchains
+            console.log("@@@ combinedContent => ", combinedContent)
             const embedding = await generateEmbeddings(combinedContent);
+
+            console.log("@@@ embedding result => ", embedding)
             
             if (!embedding) {
               console.log('No embedding generated, skipping document');
