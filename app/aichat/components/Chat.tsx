@@ -378,7 +378,7 @@ const MessageInput = ({
       event.preventDefault();
       // ✅ Alert if no files selected
       if (!selectedBlobs || selectedBlobs.length === 0) {
-        toast.warning('No document selected, proceeding with general chat...');
+        toast.warning('No documents selected. Proceeding with general chat...');
       }
       handleSubmit(event);
     }
@@ -431,7 +431,7 @@ const MessageInput = ({
                 e.preventDefault();
                 // ✅ Alert if no files selected
                 if (!selectedBlobs || selectedBlobs.length === 0) {
-                  toast.warning('No document selected, proceeding with general chat...');
+                  toast.warning('No documents selected. Proceeding with general chat...');
                 }
                 handleSubmit(event);
               }}
