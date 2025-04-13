@@ -44,7 +44,7 @@ let _embeddingModel: Pipeline | null = null;
 // ===== Text Generation Model ===== //
 const getTextModel = async (): Promise<Pipeline> => {
   if (!_textModel) {
-    const modelName = 'Xenova/TinyLlama-1.1B-Chat-v1.0';
+    const modelName = 'Xenova/TinyLlama-1.1B-Chat-v1.0-int8';
     const fallbackModel = 'Xenova/phi-2';
 
     const loadModel = async (model: string, config: TextModelConfig): Promise<Pipeline> => {
@@ -60,7 +60,7 @@ const getTextModel = async (): Promise<Pipeline> => {
     const localConfig: TextModelConfig = {
       quantized: true,
       revision: 'main',
-      model_file: 'model_quantized.onnx',
+      model_file: 'model_q4f16.onnx',
       config_file: 'config.json',
       tokenizer_file: 'tokenizer.json',
       progress_callback: (progress) => {
@@ -94,44 +94,58 @@ const getTextModel = async (): Promise<Pipeline> => {
 // ===== Embedding Model ===== //
 const getEmbeddingModel = async (): Promise<Pipeline> => {
   if (!_embeddingModel) {
-    const modelName = 'aubmindlab/bert-base-arabertv02';
+    const modelName = 'asafaya/bert-large-arabic';
+    const fallbackModel = 'danfeg/ArabicBERT_Base'; // Smaller Arabic alternative
 
-    const loadModel = async (config: EmbeddingModelConfig): Promise<Pipeline> => {
+    const loadModel = async (model: string, config: EmbeddingModelConfig): Promise<Pipeline> => {
       try {
-        console.log('Loading embedding model...');
-        return await pipeline('feature-extraction', modelName, config as Parameters<typeof pipeline>[2]);
+        console.log(`Loading ${model}...`);
+        return await pipeline('feature-extraction', model, {
+          ...config,
+          revision: 'safeGenesis' // Use the safe variant if available
+        });
       } catch (error) {
-        console.error('Embedding model load failed:', error);
+        console.error(`Failed to load ${model}:`, error);
         throw error;
       }
     };
 
     const localConfig: EmbeddingModelConfig = {
       quantized: true,
-      model_file: 'model_quantized.onnx',
+      model_file: 'model.safetensors', 
       config_file: 'config.json',
-      tokenizer_file: 'tokenizer.json',
+      tokenizer_file: 'vocab.txt', 
       pooling: 'mean',
       normalize: true,
       progress_callback: (progress) => {
         if (progress.status === 'progress') {
-          console.log(`Loading progress: ${(progress.loaded / progress.total * 100).toFixed(1)}%`);
+          console.log(`Progress: ${(progress.loaded / (progress.total || 1.35e9) * 100).toFixed(1)}%`);
         }
       }
     };
 
     try {
-      _embeddingModel = await loadModel(localConfig);
+      // First try loading locally with quantization
+      _embeddingModel = await loadModel(modelName, localConfig);
     } catch (localError) {
       console.warn('Local load failed, attempting download...');
       try {
         env.allowRemoteModels = true;
-        _embeddingModel = await loadModel({
+        
+        // Try with safeGenesis variant first
+        _embeddingModel = await loadModel(modelName, {
           ...localConfig,
-          // Remove file specifications for download
+          revision: 'safeGenesis',
           model_file: undefined,
           config_file: undefined,
           tokenizer_file: undefined
+        });
+      } catch (remoteError) {
+        console.warn('Main model failed, falling back to AraBERT...');
+        _embeddingModel = await loadModel(fallbackModel, {
+          quantized: true,
+          pooling: 'mean',
+          normalize: true
         });
       } finally {
         env.allowRemoteModels = false;
@@ -140,7 +154,6 @@ const getEmbeddingModel = async (): Promise<Pipeline> => {
   }
   return _embeddingModel;
 };
-
 // ===== Utilities ===== //
 export const clearModelCache = (): void => {
   _textModel = null;
@@ -221,7 +234,7 @@ export const preliminaryAnswerChainAgent = async (
     const model = await getTextModel();
     const response = await model(SystemPrompt + '\n\nContent: ' + content, {
       max_length: 1024,
-      temperature: 0.3
+      temperature: 0.2
     });
 
     // Parse the response into the schema format
