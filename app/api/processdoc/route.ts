@@ -1,34 +1,45 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { embed } from 'ai';
 import { getSession } from '@/lib/server/supabase';
 import { createAdminClient } from '@/lib/server/admin';
 import { format } from 'date-fns';
 import { TZDate } from '@date-fns/tz';
 import {
   preliminaryAnswerChainAgent,
-  generateDocumentMetadata,
-  generateEmbeddings
+  generateDocumentMetadata
 } from './agentchains';
-import { pipeline } from '@xenova/transformers';
+import { voyage } from 'voyage-ai-provider';
+import { EmbeddingQueue } from './embeddingQueue';
 
 export const dynamic = 'force-dynamic';
+
 export const maxDuration = 60;
 
+const embeddingModel = voyage.textEmbeddingModel('voyage-3-large', {
+  inputType: 'document',
+  truncation: false,
+  outputDimension: 1024,
+  outputDtype: 'int8'
+});
+
+// Initialize embedding queue with model instance
+const embeddingQueue = new EmbeddingQueue({
+  rpmLimit: 1800,
+  tpmLimit: 7500000,
+  model: embeddingModel  // Pass the model instance directly
+});
+
 function sanitizeFilename(filename: string): string {
-  // Fallback for missing String.prototype.normalize
-  console.log("@@@ filename => ", filename  )
-  const normalized = typeof filename.normalize === 'function' 
-    ? filename.normalize('NFD') 
-    : filename;
-  
-  return normalized
-    .replace(/[^\w.-]/g, '_') // Combined replacement
-    .replace(/_+/g, '_')      // Collapse multiple underscores
-    .replace(/^_+|_+$/g, ''); // Trim leading/trailing underscores
+  const sanitized = filename
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._-]/g, '_');
+  return sanitized;
 }
 
 interface DocumentRecord {
   user_id: string;
-  embedding: string;
+  embedding: string; // Changed from number[] to string
   text_content: string;
   title: string;
   timestamp: string;
@@ -57,7 +68,7 @@ async function processFile(pages: string[], fileName: string, userId: string) {
     userId
   );
 
-  console.log('@@@ Document metadata object:', object); // Add this to verify structure
+  console.log('@@@ Document metadata object:', object);
 
   const now = new TZDate(new Date(), 'Europe/Copenhagen');
   const timestamp = format(now, 'yyyy-MM-dd');
@@ -137,13 +148,14 @@ async function processFile(pages: string[], fileName: string, userId: string) {
       ${doc}
       `;
 
+          // FIXED: Generate a single embedding for the entire content
+          // instead of iterating character by character
           try {
-            // Use the generateEmbeddings function from agentchains
             console.log("@@@ combinedContent => ", combinedContent)
-            const embedding = await generateEmbeddings(combinedContent);
+            const embedding = await embeddingQueue.add(combinedContent);
 
             console.log("@@@ embedding result => ", embedding)
-            
+
             if (!embedding) {
               console.log('No embedding generated, skipping document');
               return;
@@ -151,7 +163,7 @@ async function processFile(pages: string[], fileName: string, userId: string) {
 
             batchRecords.push({
               user_id: userId,
-              embedding: JSON.stringify(embedding), // Stringify the array
+              embedding: `[${embedding.join(',')}]`,
               text_content: doc,
               title: fileName,
               timestamp,
@@ -163,8 +175,8 @@ async function processFile(pages: string[], fileName: string, userId: string) {
               filter_tags: filterTags,
               page_number: pageNumber,
               total_pages: totalPages,
-              chunk_number: 1,
-              total_chunks: 1
+              chunk_number: 1, // Since we're now treating each page as one document
+              total_chunks: 1 // Since we're now treating each page as one document
             });
           } catch (embedError) {
             console.error(
@@ -178,7 +190,9 @@ async function processFile(pages: string[], fileName: string, userId: string) {
       })
     );
 
+    // Only attempt to upsert if we have records
     if (batchRecords.length > 0) {
+      // Upsert records in batches
       const upsertBatches = chunks(batchRecords, upsertBatchSize);
       console.log(`Processing ${upsertBatches.length} upsert batches`);
 
@@ -188,9 +202,11 @@ async function processFile(pages: string[], fileName: string, userId: string) {
           const { error } = await supabase
             .from('vector_documents')
             .upsert(batch, {
-              onConflict: 'user_id, title, timestamp, page_number, chunk_number',
+              onConflict:
+                'user_id, title, timestamp, page_number, chunk_number',
               ignoreDuplicates: false
-            });
+            })
+            .select();
 
           if (error) {
             console.error('Error upserting batch to Supabase:', error);
@@ -207,6 +223,7 @@ async function processFile(pages: string[], fileName: string, userId: string) {
       console.warn('No records to upsert for this batch');
     }
 
+    // Clear batch records for next iteration
     batchRecords = [];
   }
 
@@ -224,15 +241,12 @@ async function processDocumentWithAgentChains(
   combinedPreliminaryAnswers: string;
   usage: { promptTokens: number; completionTokens: number };
 }> {
-
-  console.log("@@@ ai_maintopics => ", ai_maintopics);
   const prompt = `
   Title: ${ai_title}
   Description: ${ai_description}
-  ${ai_maintopics ? `Main Topics: ${ai_maintopics.join(', ')}` : ''}
+  Main Topics: ${ai_maintopics.join(', ')}
   Document: ${doc}
   `;
-
   console.log("@@@ prompt => ", prompt);
 
   try {
@@ -240,6 +254,7 @@ async function processDocumentWithAgentChains(
 
     const { object, usage } = result;
     console.log('@@@ Result from preliminaryAnswerChain:', object);
+    // If tags is potentially undefined, use nullish coalescing
     const tagTaxProvisions = object.tags?.join(', ') || '';
 
     const combinedPreliminaryAnswers = [
@@ -275,7 +290,6 @@ async function processDocumentWithAgentChains(
     };
   }
 }
-
 export async function POST(req: NextRequest) {
   try {
     const session = await getSession();

@@ -116,7 +116,9 @@ export const UploadProvider: React.FC<{
   const uploadFiles = useCallback(async (files: File[]) => {
     setIsUploading(true);
     setUploadProgress(0);
-    setUploadFileCount(files.length);
+    await setUploadFileCount(files.length);
+
+    console.log(files.length)
     updateUploadStatus(`Uploading ${files.length} file${files.length !== 1 ? 's' : ''}...`);
 
     const uploadedFilePaths: string[] = [];
@@ -134,8 +136,8 @@ export const UploadProvider: React.FC<{
       for (const [index, file] of files.entries()) {
         const path = await uploadToSupabase(file, userId);
         uploadedFilePaths.push(path);
-        setUploadProgress(prev => prev + (25 / files.length));
-        updateUploadStatus(`Uploading file ${index + 1} of ${files.length}...`);
+        setUploadProgress(prev => prev + (25 / uploadFileCount));
+        updateUploadStatus(`Uploading file ${index + 1} of ${uploadFileCount}...`);
       }
 
       // Process files
@@ -158,7 +160,7 @@ export const UploadProvider: React.FC<{
 
         const result = await response.json();
         console.log("@@@ result => ", result)
-        setUploadProgress(prev => prev + (25 / files.length));
+        setUploadProgress(prev => prev + (25 / uploadFileCount));
         
         if (result.jobId) {
           setCurrentJobId(result.jobId);
