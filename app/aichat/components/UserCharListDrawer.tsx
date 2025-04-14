@@ -301,7 +301,7 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
                   <ul className="space-y-0 mt-1">
                     {sortedUserFiles.map((file, index) => {
                       const formattedDate = format(
-                        new Date(file.created_at),
+                        new Date(),
                         'yyyy-MM-dd'
                       );
                       const filterTag = `${file.name}[[${formattedDate}]]`;
