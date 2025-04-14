@@ -1,13 +1,14 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  // [AI OPTIMIZATION] Add these new experimental settings
+  serverComponentsExternalPackages: ['@xenova/transformers'],
+  
   experimental: {
     staleTimes: {
       dynamic: 30,
       static: 180
     },
-    // [AI OPTIMIZATION] Add these new experimental settings
-    serverComponentsExternalPackages: ['@xenova/transformers'],
   },
   poweredByHeader: false,
   
