@@ -109,14 +109,16 @@ export default function ServerUploadPage() {
         alert(`You can upload up to ${MAX_TOTAL_FILES} files at once.`);
       }
 
-      const today = new Date();
-      const formattedDate = format(today, 'yyyy-MM-dd');
-      const updatedFiles = newFiles.map(file => ({
-        ...file,
-        uploadDate: formattedDate
-      }));
+      // const today = new Date();
+      // const formattedDate = format(today, 'yyyy-MM-dd');
+      // const updatedFiles = newFiles.map(file => ({
+      //   ...file,
+      //   update_at: formattedDate
+      // }));
 
-      setSelectedFiles(prev => [...(prev || []), ...updatedFiles]);
+      // setSelectedFiles(prev => [...(prev || []), ...updatedFiles]);
+      // console.log("@@@ updatedFiles => ", updatedFiles)
+      setSelectedFiles(prev => [...(prev || []), ...newFiles]);
     },
     [selectedFiles, setSelectedFiles, validateFile]
   );
