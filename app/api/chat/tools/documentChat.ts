@@ -63,7 +63,7 @@ async function querySupabaseVectors(
   userId: string,
   selectedFiles: string[],
   topK = 40, // number of top matches to return
-  similarityThreshold = 0.3 // similarity threshold for filtering results
+  similarityThreshold = 0.5 // similarity threshold for filtering results
 ) {
   const supabase = await createServerSupabaseClient();
 
@@ -74,7 +74,7 @@ async function querySupabaseVectors(
     query_embedding: embeddingString,
     match_count: topK,
     filter_user_id: userId,
-    filter_files: selectedFiles,
+    filter_files: selectedFiles ? selectedFiles : [],
     similarity_threshold: similarityThreshold
   });
 
