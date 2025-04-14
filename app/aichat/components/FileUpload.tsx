@@ -138,6 +138,7 @@ export default function ServerUploadPage() {
   return (
     <form
       className="max-w-[550px] mx-auto bg-background"
+      style={{maxHeight:'250px', overflow:'scroll'}}
       onSubmit={handleSubmit}
       ref={formRef}
     >
