@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   }
   const ratelimit = new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(30, '24h') // 30 msg per 24 hours
+    limiter: Ratelimit.slidingWindow(192, '24h') // 192 msg per 24 hours
   });
 
   const { success, limit, reset, remaining } = await ratelimit.limit(
