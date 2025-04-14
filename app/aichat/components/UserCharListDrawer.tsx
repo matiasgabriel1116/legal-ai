@@ -343,7 +343,7 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
                                   {file.name.replace(/_/g, ' ')}
                                 </p>
                                 <p className="text-xs text-muted-foreground truncate">
-                                  {format(new Date(file.created_at), 'PPP')}
+                                  {format(new Date(file.updated_at), 'PPP')}
                                 </p>
                               </div>
                             </Link>
