@@ -7,6 +7,7 @@ export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   try {
+    console.log("@@@ start checking.....")
     if (!process.env.LLAMA_CLOUD_API_KEY) {
       console.error('LLAMA_CLOUD_API_KEY is not configured');
       return NextResponse.json(
@@ -25,6 +26,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { jobId } = await req.json();
+    console.log("@@@ jobId => ", jobId)
 
     const statusResponse = await fetch(
       `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${jobId}`,
@@ -45,6 +47,8 @@ export async function POST(req: NextRequest) {
     }
 
     const statusData = await statusResponse.json();
+
+    console.log("@@@ statusData => ", statusData)
 
     if (statusData.status === 'PENDING') {
       return NextResponse.json({ status: 'PENDING' });

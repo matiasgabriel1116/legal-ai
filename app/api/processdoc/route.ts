@@ -9,6 +9,7 @@ import {
   generateDocumentMetadata
 } from './agentchains';
 import { voyage } from 'voyage-ai-provider';
+import { EmbeddingQueue } from './embeddingQueue';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,13 @@ const embeddingModel = voyage.textEmbeddingModel('voyage-3-large', {
   truncation: false,
   outputDimension: 1024,
   outputDtype: 'int8'
+});
+
+// Initialize embedding queue with model instance
+const embeddingQueue = new EmbeddingQueue({
+  rpmLimit: 1800,
+  tpmLimit: 7500000,
+  model: embeddingModel  // Pass the model instance directly
 });
 
 function sanitizeFilename(filename: string): string {
@@ -49,6 +57,7 @@ interface DocumentRecord {
 
 async function processFile(pages: string[], fileName: string, userId: string) {
   let selectedDocuments = pages;
+  console.log("@@@ processFile->fileName => ", fileName)
   if (pages.length > 19) {
     selectedDocuments = [...pages.slice(0, 10), ...pages.slice(-10)];
   }
@@ -58,6 +67,8 @@ async function processFile(pages: string[], fileName: string, userId: string) {
     combinedDocumentContent,
     userId
   );
+
+  console.log('@@@ Document metadata object:', object);
 
   const now = new TZDate(new Date(), 'Europe/Copenhagen');
   const timestamp = format(now, 'yyyy-MM-dd');
@@ -104,7 +115,7 @@ async function processFile(pages: string[], fileName: string, userId: string) {
               doc,
               object.descriptiveTitle,
               object.shortDescription,
-              object.mainTopics,
+              object.mainTopics || [],
               userId
             );
 
@@ -140,10 +151,10 @@ async function processFile(pages: string[], fileName: string, userId: string) {
           // FIXED: Generate a single embedding for the entire content
           // instead of iterating character by character
           try {
-            const { embedding } = await embed({
-              model: embeddingModel,
-              value: combinedContent
-            });
+            console.log("@@@ combinedContent => ", combinedContent)
+            const embedding = await embeddingQueue.add(combinedContent);
+
+            console.log("@@@ embedding result => ", embedding)
 
             if (!embedding) {
               console.log('No embedding generated, skipping document');
@@ -194,7 +205,8 @@ async function processFile(pages: string[], fileName: string, userId: string) {
               onConflict:
                 'user_id, title, timestamp, page_number, chunk_number',
               ignoreDuplicates: false
-            });
+            })
+            .select();
 
           if (error) {
             console.error('Error upserting batch to Supabase:', error);
@@ -235,14 +247,15 @@ async function processDocumentWithAgentChains(
   Main Topics: ${ai_maintopics.join(', ')}
   Document: ${doc}
   `;
+  console.log("@@@ prompt => ", prompt);
 
   try {
     const result = await preliminaryAnswerChainAgent(prompt, userId);
 
     const { object, usage } = result;
-    console.log('Result:', object);
+    console.log('@@@ Result from preliminaryAnswerChain:', object);
     // If tags is potentially undefined, use nullish coalescing
-    const tagTaxProvisions = object.tags.join(', ') || '';
+    const tagTaxProvisions = object.tags?.join(', ') || '';
 
     const combinedPreliminaryAnswers = [
       object.preliminary_answer_1,
@@ -279,15 +292,6 @@ async function processDocumentWithAgentChains(
 }
 export async function POST(req: NextRequest) {
   try {
-    // Check for Llama Cloud API key
-    if (!process.env.LLAMA_CLOUD_API_KEY) {
-      console.error('LLAMA_CLOUD_API_KEY is not configured');
-      return NextResponse.json(
-        { error: 'Server configuration error: LLAMA_CLOUD_API_KEY is missing' },
-        { status: 500 }
-      );
-    }
-
     const session = await getSession();
     if (!session) {
       return NextResponse.json(
@@ -300,38 +304,48 @@ export async function POST(req: NextRequest) {
 
     const { jobId, fileName } = await req.json();
 
-    const markdownResponse = await fetch(
-      `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${jobId}/result/markdown`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.LLAMA_CLOUD_API_KEY}`,
-          Accept: 'application/json'
-        }
-      }
-    );
+    console.log("@@@ req->fileName => ", fileName)
 
-    if (!markdownResponse.ok) {
-      console.error(
-        'Failed to get Markdown result:',
-        markdownResponse.statusText
-      );
-      return NextResponse.json(
+    // Check if we're using Llama Cloud or local processing
+    if (process.env.LLAMA_CLOUD_API_KEY) {
+      const markdownResponse = await fetch(
+        `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${jobId}/result/markdown`,
         {
-          error: `Failed to get Markdown result: ${markdownResponse.statusText}`
-        },
-        { status: 500 }
+          headers: {
+            Authorization: `Bearer ${process.env.LLAMA_CLOUD_API_KEY}`,
+            Accept: 'application/json'
+          }
+        }
+      );
+
+      if (!markdownResponse.ok) {
+        console.error(
+          'Failed to get Markdown result:',
+          markdownResponse.statusText
+        );
+        return NextResponse.json(
+          {
+            error: `Failed to get Markdown result: ${markdownResponse.statusText}`
+          },
+          { status: 500 }
+        );
+      }
+
+      const markdown = await markdownResponse.text();
+      const pages = markdown
+        .split('\\n---\\n')
+        .map((page) => page.trim())
+        .filter((page) => page !== '');
+      
+      const filterTags = await processFile(pages, fileName, userId);
+      return NextResponse.json({ status: 'SUCCESS', filterTags });
+    } else {
+      // Local file processing (if you implement this later)
+      return NextResponse.json(
+        { error: 'Local file processing not yet implemented' },
+        { status: 501 }
       );
     }
-
-    const markdown = await markdownResponse.text();
-    const pages = markdown
-      .split('\\n---\\n')
-      .map((page) => page.trim())
-      .filter((page) => page !== '');
-
-    const filterTags = await processFile(pages, fileName, userId);
-
-    return NextResponse.json({ status: 'SUCCESS', filterTags });
   } catch (error) {
     console.error('Error in POST request:', error);
     return NextResponse.json(

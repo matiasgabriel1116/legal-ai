@@ -33,11 +33,10 @@ function LinearProgressWithLabel({
   status: string;
 }) {
   const statusesWithSpinner = [
-    'Uploading file...',
-    'Preparing file for analysis...',
-    'Analyzing file...',
-    'Finalizing files...',
-    'Still analyzing files...'
+    'Initializing...',
+    'Uploading...',
+    'Analyzing...',
+    'Saving to Database...',
   ];
 
   const shouldShowSpinner = statusesWithSpinner.includes(status);
@@ -73,7 +72,7 @@ export default function ServerUploadPage() {
   const formRef = useRef<HTMLFormElement | null>(null);
   const {
     isUploading,
-    uploadFile,
+    uploadFiles,
     uploadProgress,
     uploadStatus,
     statusSeverity,
@@ -123,7 +122,7 @@ export default function ServerUploadPage() {
     if (!selectedFiles || selectedFiles.length === 0) return;
 
     try {
-      await uploadFile(selectedFiles);
+      await uploadFiles(selectedFiles);
     } finally {
       formRef.current?.reset();
     }
@@ -139,6 +138,7 @@ export default function ServerUploadPage() {
   return (
     <form
       className="max-w-[550px] mx-auto bg-background"
+      style={{maxHeight:'250px', overflow:'scroll'}}
       onSubmit={handleSubmit}
       ref={formRef}
     >
