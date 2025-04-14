@@ -213,7 +213,7 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
   const sortedUserFiles = useMemo(() => {
     return [...userFiles].sort(
       (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
     );
   }, [userFiles]);
 
@@ -301,7 +301,7 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
                   <ul className="space-y-0 mt-1">
                     {sortedUserFiles.map((file, index) => {
                       const formattedDate = format(
-                        new Date(file.created_at),
+                        new Date(file.updated_at),
                         'yyyy-MM-dd'
                       );
                       const filterTag = `${file.name}[[${formattedDate}]]`;
@@ -343,7 +343,7 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
                                   {file.name.replace(/_/g, ' ')}
                                 </p>
                                 <p className="text-xs text-muted-foreground truncate">
-                                  {format(new Date(file.created_at), 'PPP')}
+                                  {format(new Date(file.updated_at), 'PPP')}
                                 </p>
                               </div>
                             </Link>

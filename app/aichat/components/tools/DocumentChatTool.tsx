@@ -15,7 +15,7 @@ const DocumentsTool: React.FC<DocumentsToolProps> = ({ toolInvocation }) => {
     <div className="flex items-center gap-2">
       <FileText className="text-primary" size={18} />
       <span className="text-sm font-medium text-foreground">
-        Søgning i uploadede dokumenter
+      البحث في المستندات التي تم تحميلها  
       </span>
     </div>
   );
@@ -28,7 +28,7 @@ const DocumentsTool: React.FC<DocumentsToolProps> = ({ toolInvocation }) => {
           {toolHeader}
           <div className="flex items-center gap-2 mt-2">
             <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-            <span className="text-xs text-muted-foreground">Søger...</span>
+            <span className="text-xs text-muted-foreground">انا ابحث عن...</span>
           </div>
           {query && (
             <div className="mt-2">
@@ -37,7 +37,7 @@ const DocumentsTool: React.FC<DocumentsToolProps> = ({ toolInvocation }) => {
                   toolInvocation.state === 'call' ? 'font-bold' : 'font-normal'
                 } text-muted-foreground`}
               >
-                Søgeord: {query}
+                الكلمات الرئيسية: {query}
               </span>
             </div>
           )}
@@ -50,12 +50,12 @@ const DocumentsTool: React.FC<DocumentsToolProps> = ({ toolInvocation }) => {
           {toolHeader}
           <div className="flex items-center gap-2 mt-2">
             <CheckCircle size={16} className="text-green-500" />
-            <span className="text-xs text-green-600">Søgning fuldført</span>
+            <span className="text-xs text-green-600">تم الانتهاء من البحث</span>
           </div>
           {query && (
             <div className="mt-1">
               <span className="text-xs text-muted-foreground">
-                Søgeord: {query}
+              الكلمات الرئيسية: {query}
               </span>
             </div>
           )}
