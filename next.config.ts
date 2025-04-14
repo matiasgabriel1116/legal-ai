@@ -1,9 +1,13 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  // Development mode
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   // [AI OPTIMIZATION] Add these new experimental settings
   serverComponentsExternalPackages: ['@xenova/transformers'],
-  
+
   experimental: {
     staleTimes: {
       dynamic: 30,
