@@ -13,6 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
+import { format } from 'date-fns';
 
 const SUPPORTED_FILE_TYPES: Record<string, string[]> = {
   'application/pdf': ['.pdf', '.PDF'],
@@ -108,7 +109,14 @@ export default function ServerUploadPage() {
         alert(`You can upload up to ${MAX_TOTAL_FILES} files at once.`);
       }
 
-      setSelectedFiles(prev => [...(prev || []), ...newFiles]);
+      const today = new Date();
+      const formattedDate = format(today, 'yyyy-MM-dd');
+      const updatedFiles = newFiles.map(file => ({
+        ...file,
+        uploadDate: formattedDate
+      }));
+
+      setSelectedFiles(prev => [...(prev || []), ...updatedFiles]);
     },
     [selectedFiles, setSelectedFiles, validateFile]
   );
