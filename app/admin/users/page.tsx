@@ -14,18 +14,27 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { fetchUsers, handleSubscriptionToggle, handleDeleteUser, inviteUserByEmail } from './fetch';
-import { createAdminClient } from '@/lib/server/admin';
 
+type SubscriptionType = "free" | "paid" | "premium"; // Expanded to include possible types
+type UserStatus = "active" | "inactive" | "pending" | "suspended";
+
+interface User {
+  id: string;
+  full_name: string;
+  email: string;
+  status?: UserStatus;
+  subscription_type: SubscriptionType;
+}
 
 export default function UsersPage() {
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [newUserEmail, setNewUserEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const loadUsers = async () => {
     try {
       const usersData = await fetchUsers();
-      setUsers(usersData || []);
+      setUsers(usersData ?? []);
     } catch (error) {
       console.error('Error loading users:', error);
       toast.error('Failed to load users');
@@ -33,46 +42,59 @@ export default function UsersPage() {
   };
 
   const inviteUser = async () => {
-    if (!newUserEmail) {
-      toast.error('Please enter an email address');
+    if (!newUserEmail.trim()) {
+      toast.error('Please enter a valid email address');
       return;
     }
 
     setIsLoading(true);
     try {
-      await inviteUserByEmail(newUserEmail);
+      await inviteUserByEmail(newUserEmail.trim());
       toast.success('Invitation sent successfully');
       await loadUsers();
       setNewUserEmail('');
     } catch (error) {
       console.error('Error inviting user:', error);
-      toast.error('Failed to send invitation');
+      toast.error(error instanceof Error ? error.message : 'Failed to send invitation');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const toggleSubscription = async (userId: string, checked: string) => {
+  const toggleSubscription = async (userId: string, currentType: SubscriptionType) => {
     try {
-      await handleSubscriptionToggle(userId, checked == 'free' ? 'premium' : 'free');
-      toast.success(`User subscription updated to ${checked ? 'Premium' : 'Free'}`);
-      await loadUsers();
+      const newType = currentType === "free" ? "premium" : "free";
+      await handleSubscriptionToggle(userId, newType);
+      toast.success(`Subscription changed to ${newType}`);
+      
+      // Optimistic update
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === userId 
+            ? { ...user, subscription_type: newType } 
+            : user
+        )
+      );
     } catch (error) {
       console.error('Error toggling subscription:', error);
-      toast.error('Failed to update subscription status');
+      toast.error('Failed to update subscription');
+      await loadUsers(); // Revert to server state
     }
   };
 
   const deleteUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
     
     try {
       await handleDeleteUser(userId);
       toast.success('User deleted successfully');
-      await loadUsers();
+      
+      // Optimistic update
+      setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
     } catch (error) {
       console.error('Error deleting user:', error);
       toast.error('Failed to delete user');
+      await loadUsers(); // Revert to server state
     }
   };
 
@@ -91,10 +113,11 @@ export default function UsersPage() {
             value={newUserEmail}
             onChange={(e) => setNewUserEmail(e.target.value)}
             className="min-w-[300px]"
+            type="email"
           />
           <Button 
             onClick={inviteUser} 
-            disabled={isLoading}
+            disabled={isLoading || !newUserEmail.trim()}
           >
             {isLoading ? 'Sending...' : 'Invite Lawyer'}
           </Button>
@@ -112,28 +135,36 @@ export default function UsersPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell>{user.full_name}</TableCell>
-              <TableCell>{user.email}</TableCell>
-              <TableCell>{user.status || 'Active'}</TableCell>
-              <TableCell>
-                <Switch
-                  checked={user.subscription_type == "free" ? 0: 1}
-                  onCheckedChange={(checked) => toggleSubscription(user.id, user.subscription_type)}
-                />
-              </TableCell>
-              <TableCell>
-                <Button 
-                  variant="destructive" 
-                  size="sm"
-                  onClick={() => deleteUser(user.id)}
-                >
-                  Delete
-                </Button>
+          {users.length > 0 ? (
+            users.map((user) => (
+              <TableRow key={user.id}>
+                <TableCell>{user.full_name || 'Unnamed User'}</TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell className="capitalize">{user.status || 'active'}</TableCell>
+                <TableCell>
+                  <Switch
+                    checked={user.subscription_type !== "free"}
+                    onCheckedChange={() => toggleSubscription(user.id, user.subscription_type)}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={() => deleteUser(user.id)}
+                  >
+                    Delete
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center py-4">
+                No users found
               </TableCell>
             </TableRow>
-          ))}
+          )}
         </TableBody>
       </Table>
     </div>

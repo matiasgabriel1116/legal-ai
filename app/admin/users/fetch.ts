@@ -18,7 +18,6 @@ export const fetchUsers = async () => {
 
 export const handleSubscriptionToggle = async (userId: string, isPremium: string) => {
   const supabase = createAdminClient();
-  console.log("@@@@ =>", userId, isPremium)
   const { error } = await supabase
     .from('users')
     .update({ subscription_type: isPremium })
