@@ -31,8 +31,14 @@ const sidebarNavItems: SidebarNavItem[] = [
     icon: 'users'
   },
   {
-    title: 'Documents',
-    href: '/admin/documents',
+    title: 'Common Documents',
+    href: '/admin/common_docs',
+    icon: 'file-text'
+  },
+  ,
+  {
+    title: 'Lawyers Documents',
+    href: '/admin/lawyers_docs',
     icon: 'file-text'
   },
   {
