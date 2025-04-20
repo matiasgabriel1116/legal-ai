@@ -23,7 +23,8 @@ export async function fetchLawyerDocuments(): Promise<(LawyerDocument & { user_n
       .from('vector_documents')
       .select('*')
       .eq('chunk_number', 1)
-      .not('user_id', 'eq', '11f99276-9cc7-4345-a56a-06167b5ab69b')
+      .not('user_id', 'eq', '11f99276-9cc7-4345-a56a-06167b5ab69b') // prasxomeasxiom@gmail.com
+      .not('user_id', 'eq', 'd735eeb2-2478-4cb5-b427-f3a3339493b6') // leonardo202483@gmail.com
       .order('created_at', { ascending: false })
 
     if (docsError) throw docsError;
