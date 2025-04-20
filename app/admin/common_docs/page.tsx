@@ -89,6 +89,7 @@ export default function CommonDocsPage() {
             <TableHead>AI Title</TableHead>
             <TableHead>Pages</TableHead>
             <TableHead>Created At</TableHead>
+            <TableHead>Uploaded By</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -101,6 +102,7 @@ export default function CommonDocsPage() {
               <TableCell>
                 {new Date(doc.created_at).toLocaleDateString()}
               </TableCell>
+              <TableCell>{doc.admin_name || 'Unknown admin'}</TableCell>
               <TableCell>
                 <Button
                   variant="destructive"

@@ -16,18 +16,43 @@ export interface CommonDocument {
 
 export async function fetchCommonDocs() {
   const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from('vector_documents')
-    .select('*')
-    .eq('chunk_number', 1) // Get only first chunk of each document
-    .in('user_id', [
-      '11f99276-9cc7-4345-a56a-06167b5ab69b', // prasxomeasxiom@gmail.com
-      'd735eeb2-2478-4cb5-b427-f3a3339493b6'  // leonardo202483@gmail.com
-    ])
-    .order('created_at', { ascending: false });
+  
+  try {
+    // First fetch documents
+    const { data: docs, error: docsError } = await supabase
+      .from('vector_documents')
+      .select('*')
+      .eq('chunk_number', 1) // Get only first chunk of each document
+      .in('user_id', [
+        '11f99276-9cc7-4345-a56a-06167b5ab69b', // prasxomeasxiom@gmail.com
+        'd735eeb2-2478-4cb5-b427-f3a3339493b6'  // leonardo202483@gmail.com
+      ])
+      .order('created_at', { ascending: false });
 
-  if (error) throw error;
-  return data as CommonDocument[];
+    if (docsError) throw docsError;
+    if (!docs?.length) return [];
+
+    // Then fetch admins
+    const adminIds = docs.map(doc => doc.user_id).filter(Boolean);
+    const { data: admins, error: adminsError } = await supabase
+      .from('users')
+      .select('id, full_name')
+      .in('id', adminIds);
+
+    if (adminsError) throw adminsError;
+
+    // Create a mapping of admin IDs to names
+    const adminMap = new Map(admins?.map(admin => [admin.id, admin.full_name]) ?? new Map());
+
+    // Combine the data
+    return docs.map(doc => ({
+      ...doc,
+      admin_name: adminMap.get(doc.user_id) || 'Unknown admin'
+    }));
+  } catch (error) {
+    console.error('Error fetching documents:', error);
+    throw new Error('Failed to fetch documents');
+  }
 }
 
 // export async function uploadDocument(file: File) {
