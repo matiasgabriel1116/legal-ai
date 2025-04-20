@@ -110,19 +110,36 @@ async function getSelectedDocumentsMetadata(
 ) {
   const supabase = await createServerSupabaseClient();
 
-  const { data, error } = await supabase
-    .from('vector_documents')
-    .select('title, ai_title, ai_description, ai_maintopics, primary_language')
-    .eq('user_id', userId)
-    .in('filter_tags', selectedFiles)
-    .eq('page_number', 1);
+  try {
+    // Fetch user's documents
+    const { data: userDocs, error: userError } = await supabase
+      .from('vector_documents')
+      .select('title, ai_title, ai_description, ai_maintopics, primary_language')
+      .eq('user_id', userId)
+      .in('filter_tags', selectedFiles);
 
-  if (error) {
+    if (userError) throw userError;
+
+    // Fetch admin documents (from specific admin accounts)
+    const { data: adminDocs, error: adminError } = await supabase
+      .from('vector_documents')
+      .select('title, ai_title, ai_description, ai_maintopics, primary_language')
+      .in('user_id', [
+        '11f99276-9cc7-4345-a56a-06167b5ab69b', // prasxomeasxiom@gmail.com
+        'd735eeb2-2478-4cb5-b427-f3a3339493b6'  // leonardo202483@gmail.com
+      ])
+
+    if (adminError) throw adminError;
+
+    // Combine and return results
+    // console.log("#### userDocs => ", userDocs.length, userDocs)
+    // console.log("#### adminDocs => ", adminDocs.length, adminDocs)
+    // console.log("#### allDocs => ", ([...(userDocs || []), ...(adminDocs || [])]).length)
+    return [...(userDocs || []), ...(adminDocs || [])];
+  } catch (error) {
     console.error('Error fetching document metadata:', error);
     return [];
   }
-
-  return data;
 }
 
 export const searchUserDocument = ({ userId, selectedFiles }: DocToolProps) =>
