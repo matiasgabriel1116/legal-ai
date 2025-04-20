@@ -81,3 +81,45 @@ export async function deleteDocument(docId: string) {
   if (error) throw error;
   return true;
 }
+
+export async function downloadDocument(docId: string, fileName: string) {
+  const supabase = createAdminClient();
+  
+  try {
+    // First get the file path
+    const { data: document, error: fetchError } = await supabase
+      .from('vector_documents')
+      .select('*, file_metadata ( file_path )')
+      .eq('id', docId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const filePath = (document?.file_metadata as unknown as { file_path?: string })?.file_path;
+    if (!filePath) {
+      throw new Error('File path not found for document');
+    }
+
+    // Get download URL
+    const { data: urlData, error: urlError } = await supabase.storage
+      .from('userfiles') // or your bucket name
+      .createSignedUrl(filePath, 3600); // URL valid for 1 hour
+
+    if (urlError) throw urlError;
+    if (!urlData?.signedUrl) {
+      throw new Error('Failed to generate download URL');
+    }
+
+    // Trigger download in the client
+    return {
+      url: urlData.signedUrl,
+      fileName: fileName || filePath.split('/').pop() || 'document'
+    };
+  } catch (error) {
+    console.error('Error downloading document:', error);
+    if (error instanceof StorageError && error.message.includes('The resource was not found')) {
+      throw new Error('The file was not found in storage');
+    }
+    throw new Error('Failed to download document');
+  }
+}
