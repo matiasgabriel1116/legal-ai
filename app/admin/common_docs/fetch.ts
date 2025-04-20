@@ -18,28 +18,27 @@ export async function fetchCommonDocs() {
   const supabase = createAdminClient();
   
   try {
+
+    // Then fetch admins
+    const { data: admins, error: adminsError } = await supabase
+      .from('users')
+      .select('id, full_name')
+      .eq('role', 'admin');
+
+    if (adminsError) throw adminsError;
+
+    const adminIds = admins?.map(admin => admin.id) ?? [];
+
     // First fetch documents
     const { data: docs, error: docsError } = await supabase
       .from('vector_documents')
       .select('*')
       .eq('chunk_number', 1) // Get only first chunk of each document
-      .in('user_id', [
-        '11f99276-9cc7-4345-a56a-06167b5ab69b', // prasxomeasxiom@gmail.com
-        'd735eeb2-2478-4cb5-b427-f3a3339493b6'  // leonardo202483@gmail.com
-      ])
+      .in('user_id', adminIds)
       .order('created_at', { ascending: false });
 
     if (docsError) throw docsError;
     if (!docs?.length) return [];
-
-    // Then fetch admins
-    const adminIds = docs.map(doc => doc.user_id).filter(Boolean);
-    const { data: admins, error: adminsError } = await supabase
-      .from('users')
-      .select('id, full_name')
-      .in('id', adminIds);
-
-    if (adminsError) throw adminsError;
 
     // Create a mapping of admin IDs to names
     const adminMap = new Map(admins?.map(admin => [admin.id, admin.full_name]) ?? new Map());

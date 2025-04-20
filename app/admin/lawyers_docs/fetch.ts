@@ -18,26 +18,27 @@ export async function fetchLawyerDocuments(): Promise<(LawyerDocument & { user_n
   const supabase = createAdminClient();
   
   try {
+
+    // Then fetch users
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id, full_name')
+      .eq('role', 'lawyer');
+
+    if (usersError) throw usersError;
+
+    const userIds = users?.map(user => user.id) ?? [];
+
     // First fetch documents
     const { data: docs, error: docsError } = await supabase
       .from('vector_documents')
       .select('*')
-      .eq('chunk_number', 1)
-      .not('user_id', 'eq', '11f99276-9cc7-4345-a56a-06167b5ab69b') // prasxomeasxiom@gmail.com
-      .not('user_id', 'eq', 'd735eeb2-2478-4cb5-b427-f3a3339493b6') // leonardo202483@gmail.com
-      .order('created_at', { ascending: false })
+      .eq('chunk_number', 1) // Get only first chunk of each document
+      .in('user_id', userIds)
+      .order('created_at', { ascending: false });
 
     if (docsError) throw docsError;
     if (!docs?.length) return [];
-
-    // Then fetch users
-    const userIds = docs.map(doc => doc.user_id).filter(Boolean);
-    const { data: users, error: usersError } = await supabase
-      .from('users')
-      .select('id, full_name')
-      .in('id', userIds);
-
-    if (usersError) throw usersError;
 
     // Create a mapping of user IDs to names
     const userMap = new Map(users?.map(user => [user.id, user.full_name]) ?? new Map());
