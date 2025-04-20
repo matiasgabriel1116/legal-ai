@@ -15,14 +15,14 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { fetchUsers, handleSubscriptionToggle, handleDeleteUser, inviteUserByEmail } from './fetch';
 
-type SubscriptionType = "free" | "paid" | "premium"; // Expanded to include possible types
-type UserStatus = "active" | "inactive" | "pending" | "suspended";
+type SubscriptionType = "free" | "paid" | "premium"; // Expanded to 'paid' types for real-world proj
+type Role = "lawyer" | "admin";
 
 interface User {
   id: string;
   full_name: string;
   email: string;
-  status?: UserStatus;
+  role?: Role;
   subscription_type: SubscriptionType;
 }
 
@@ -129,7 +129,7 @@ export default function UsersPage() {
           <TableRow>
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead>Role</TableHead>
             <TableHead>Premium Access</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
@@ -140,7 +140,7 @@ export default function UsersPage() {
               <TableRow key={user.id}>
                 <TableCell>{user.full_name || 'Unnamed User'}</TableCell>
                 <TableCell>{user.email}</TableCell>
-                <TableCell className="capitalize">{user.status || 'active'}</TableCell>
+                <TableCell className="capitalize">{user.role}</TableCell>
                 <TableCell>
                   <Switch
                     checked={user.subscription_type !== "free"}
