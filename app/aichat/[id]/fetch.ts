@@ -105,7 +105,7 @@ export async function fetchChat(chatId: string) {
       `
       )
       .eq('id', chatId)
-      .order('created_at', {
+      .order('updated_at', {
         ascending: true,
         referencedTable: 'chat_messages'
       })
