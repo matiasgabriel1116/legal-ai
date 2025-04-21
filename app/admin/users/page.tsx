@@ -14,6 +14,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { fetchUsers, handleSubscriptionToggle, handleDeleteUser, inviteUserByEmail } from './fetch';
+import { User } from 'lucide-react';
 
 type SubscriptionType = "free" | "paid" | "premium"; // Expanded to 'paid' types for real-world proj
 type Role = "lawyer" | "admin";
@@ -140,7 +141,7 @@ export default function UsersPage() {
               <TableRow key={user.id}>
                 <TableCell>{user.full_name || 'Unnamed User'}</TableCell>
                 <TableCell>{user.email}</TableCell>
-                <TableCell className="capitalize">{user.role}</TableCell>
+                <TableCell className="capitalize">{user?.role || 'N/A'}</TableCell>
                 <TableCell>
                   <Switch
                     checked={user.subscription_type !== "free"}
