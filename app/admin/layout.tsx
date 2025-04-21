@@ -54,7 +54,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="flex min-h-screen flex-col space-y-6">
       <div className="container grid flex-1 gap-12 md:grid-cols-[200px_1fr]">
         <aside className="hidden w-[200px] flex-col md:flex">
-          <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1">
+          <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1 p-2">
             {sidebarNavItems.map((item) => {
               const Icon = iconMap[item.icon];
               return (

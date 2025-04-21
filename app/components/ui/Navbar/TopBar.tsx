@@ -33,7 +33,8 @@ const Header: React.FC<HeaderProps> = ({ session }) => {
   );
 
   const navigationItems = [
-    { href: '/aichat', text: 'AI Chat' }
+    { href: '/admin', text: 'Go to admin' },
+    { href: '/aichat', text: 'AI Chat' },
   ];
 
   return (
