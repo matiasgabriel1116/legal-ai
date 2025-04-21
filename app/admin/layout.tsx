@@ -35,7 +35,6 @@ const sidebarNavItems: SidebarNavItem[] = [
     href: '/admin/common_docs',
     icon: 'file-text'
   },
-  ,
   {
     title: 'Lawyers Documents',
     href: '/admin/lawyers_docs',

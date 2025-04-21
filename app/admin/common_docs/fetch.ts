@@ -1,6 +1,7 @@
 'use server';
 
 import { createAdminClient } from '@/lib/server/admin';
+import { StorageError } from '@supabase/storage-js';
 
 export interface CommonDocument {
   id: string;
@@ -11,7 +12,8 @@ export interface CommonDocument {
   ai_keyentities: string[] | null;
   page_number: number;
   total_pages: number;
-  created_at: string;
+  created_at: string | null;
+  admin_name: string; 
 }
 
 export async function fetchCommonDocs() {

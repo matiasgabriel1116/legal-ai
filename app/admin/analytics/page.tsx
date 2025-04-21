@@ -13,6 +13,7 @@ import {
   Legend,
   PointElement,
   TimeScale,
+  ChartOptions
 } from 'chart.js';
 import { Card } from '@/components/ui/card';
 import 'chartjs-adapter-date-fns';
@@ -132,6 +133,7 @@ export default function AnalyticsPage() {
         beginAtZero: true,
         grid: {
           drawBorder: false,
+          display: true, // Add this to satisfy types
         }
       },
       x: {
@@ -160,8 +162,11 @@ export default function AnalyticsPage() {
         ticks: {
           source: 'labels'
         }
+      },
+      y: {
+        ...chartOptions.scales?.y,
       }
-    },
+    } as const,
   };
 
   return (

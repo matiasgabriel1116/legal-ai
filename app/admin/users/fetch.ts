@@ -7,20 +7,19 @@ export const fetchUsers = async () => {
 
     const { data: users, error } = await supabaseAdmin
       .from('users')
-      .select('*')
-      .order('email', { ascending: false })
+      .select('id, email, full_name, email, role, subscription_type')
       .order('subscription_type', { ascending: false })
 
     console.log("@@@ data => ", users);
     if (error) throw error;
-    return users;
+    return users as [];
 };
 
 export const handleSubscriptionToggle = async (userId: string, isPremium: string) => {
   const supabase = createAdminClient();
   const { error } = await supabase
     .from('users')
-    .update({ subscription_type: isPremium })
+    .update({ subscription_type: isPremium } as any)
     .eq('id', userId);
   
   if (error) throw error;

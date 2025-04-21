@@ -83,8 +83,8 @@ export default function LawyerDocsPage() {
   const sortedDocs = [...docs].sort((a, b) => {
     if (!sortConfig) return 0;
     
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
+    const aValue = a[sortConfig.key] || undefined;
+    const bValue = b[sortConfig.key] || undefined;
     
     if (aValue === undefined || bValue === undefined) return 0;
     
@@ -224,9 +224,9 @@ export default function LawyerDocsPage() {
                   <TableCell>{doc.total_pages}</TableCell>
                   <TableCell>
                     <div className="flex flex-col">
-                      <span>{formatDate(doc.created_at)}</span>
+                      <span>{doc.created_at ? formatDate(doc.created_at) : 'N/A'}</span>
                       <span className="text-xs text-muted-foreground">
-                        {new Date(doc.created_at).toLocaleTimeString()}
+                        {doc.created_at ? new Date(doc.created_at).toLocaleTimeString() : ''}
                       </span>
                     </div>
                   </TableCell>

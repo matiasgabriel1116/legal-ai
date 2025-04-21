@@ -78,13 +78,20 @@ export async function fetchTimelineStats(): Promise<TimelineStats[]> {
       .select('id, role')
       .in('id', userIds);
 
-    if (usersError) throw usersError;
+      if (usersError) throw usersError;
+      if (!users) throw new Error('No users found');
+      if (!users.length) return [];
 
     // Create a map of user_id to role
-    const userRoleMap = new Map(users?.map(user => [user.id, user.role]) ?? []);
+    // const userRoleMap = new Map(users?.map(user => [user.id, user.role]) ?? []);
+    const userRoleMap = new Map(
+      (users as unknown as { id: string; role: string }[]).map(user => [user.id, user.role])
+    );
 
     // Group uploads by date and user role
     const timelineData = documents.reduce((acc: Record<string, TimelineStats>, doc) => {
+      if (!doc.created_at) return acc;
+
       const date = new Date(doc.created_at).toISOString().split('T')[0];
       
       if (!acc[date]) {
