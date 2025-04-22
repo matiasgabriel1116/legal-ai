@@ -51,13 +51,10 @@ export async function middleware(request: NextRequest) {
 
   // Handle admin routes
   if (currentRoute.startsWith('/admin')) {
-    // Skip the main admin access denied page from checks
-    if (currentRoute === '/admin') {
-      return response;
-    }
-
     if (!session) {
-      return NextResponse.redirect(new URL('/admin', request.url));
+      const redirectUrl = new URL(request.url);
+      redirectUrl.pathname = '/not-found';
+      return NextResponse.redirect(redirectUrl);
     }
 
     const { data: userData } = await supabase
@@ -67,7 +64,9 @@ export async function middleware(request: NextRequest) {
       .single();
 
     if (!userData || userData.role !== 'admin') {
-      return NextResponse.redirect(new URL('/admin', request.url));
+      const redirectUrl = new URL(request.url);
+      redirectUrl.pathname = '/not-found';
+      return NextResponse.redirect(redirectUrl);
     }
   }
 
