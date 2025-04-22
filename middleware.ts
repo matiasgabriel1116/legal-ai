@@ -49,6 +49,28 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  // Handle admin routes
+  if (currentRoute.startsWith('/admin')) {
+    // Skip the main admin access denied page from checks
+    if (currentRoute === '/admin') {
+      return response;
+    }
+
+    if (!session) {
+      return NextResponse.redirect(new URL('/admin', request.url));
+    }
+
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', session.id)
+      .single();
+
+    if (!userData || userData.role !== 'admin') {
+      return NextResponse.redirect(new URL('/admin', request.url));
+    }
+  }
+
   return response;
 }
 // Matcher to exclude certain paths from middleware
