@@ -49,6 +49,27 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  // Handle admin routes
+  if (currentRoute.startsWith('/admin')) {
+    if (!session) {
+      const redirectUrl = new URL(request.url);
+      redirectUrl.pathname = '/not-found';
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', session.id)
+      .single();
+
+    if (!userData || userData.role !== 'admin') {
+      const redirectUrl = new URL(request.url);
+      redirectUrl.pathname = '/not-found';
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
+
   return response;
 }
 // Matcher to exclude certain paths from middleware
