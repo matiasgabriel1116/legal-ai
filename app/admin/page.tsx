@@ -62,8 +62,8 @@ async function getUserRole() {
   const { data: userInfo } = await supabase
     .from('users')
     .select('role')
-    .single();
-  
+    .single<{ role: string }>();
+
   return userInfo?.role || null;
 }
 

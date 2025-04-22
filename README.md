@@ -1,636 +1,89 @@
-# Supabase Auth with SSR + RAG + Tavily AI Web Search 🔍
+# BNR Platform - White-Label Legal AI SaaS
 
-## Table of Contents
+Welcome to the BNR Platform, a white-label legal AI SaaS solution built to empower lawyers with personalized AI legal assistance. This platform enables seamless document analysis, intelligent legal support in Arabic, and powerful admin capabilities using GPT-4 Turbo, LlamaIndex, and Supabase.
 
-- [Features](#features)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Database Setup](#database-setup)
-  - [Document Processing Setup](#document-processing-setup)
-  - [Storage Setup and RLS](#storage-setup-and-rls)
-  - [Environment Variables](#environment-variables)
-- [Email Templates](#email-templates)
-  - [Confirm Your Signup](#confirm-your-signup)
-  - [Invite User Email](#invite-user-email)
-  - [Magic Link Email](#magic-link-email)
-  - [Confirm Email Change](#confirm-email-change)
-  - [Reset Password Email](#reset-password-email)
-- [Code Structure and Philosophy](#code-structure-and-philosophy)
-  - [Code Organization Over Design Patterns](#code-organization-over-design-patterns)
-  - [Intentional Code Duplication Examples](#intentional-code-duplication-examples)
-- [License](#license)
+---
 
-## Features
+## 🚀 Features Overview
 
-- **Robust and easy authentication**: Utilize Supabase's auth capabilities alongside SSR for security.
-- **Performance**: Leverage server-side rendering for faster load times and improved user experience.
-- **Next.js Integration**: Specifically designed for easy integration with Next.js 15 projects.
+### For Lawyers
+- **Smart Legal Chat Assistant** powered by GPT-4 Turbo
+- **Document-Based Intelligence**: Upload PDF/Word documents to get case-aware answers
+- **Official Documents Access**: Receive insights from admin-uploaded laws and rulings
+- **Memory Per Session**: Past conversations are grouped by case
 
-## Getting Started
+### For Admins
+- **User Management**: View, add, or remove lawyer accounts
+- **Premium Access Toggle**: Control user privileges
+- **Common Legal Documents Upload**: Populate platform-wide reference material
 
-### Prerequisites
+---
 
-- A [Supabase account](https://supabase.io/)
+## 📸 UI Screens
 
-**If you want to use the AI features the following keys are needed**
+1. **User Dashboard**: Personalized greeting, platform capabilities, AI assistant entry point
+2. **Admin Dashboard**: View user and document statistics
+3. **Users Management**: Toggle premium access, invite/delete users
+4. **Chat Interface**: AI assistant integrated with GPT-4 Turbo and document-aware answers
+5. **File Upload View**: Drag-and-drop interface supporting PDF and Word files
 
-- A Llarma Cloud account [LlamaCloud](https://cloud.llamaindex.ai/) (for parsing pdf files into markdown)
-- An Upstash redis account [Upstash](https://upstash.com/) (for ratelimiting and caching)
-- A Tavily account for searching the internet using the AI [Tavily](https://tavily.com/)
-- A Openai API key [OpenaiAPI](https://platform.openai.com/docs/overview)
-- A Anthripic API key [Antropic](https://console.anthropic.com/dashboard)
-- A Langfuse API key [Langfuse](https://cloud.langfuse.com/) (for telemetry for the AI chat, https://sdk.vercel.ai/providers/observability/langfuse)
+---
 
-### Installation
+## 🧠 How It Works - Intelligence Stack
 
-1. **Clone the Repository**
+The BNR Platform adjusts its AI chat behavior based on document availability:
 
-   ```bash
-   git clone https://github.com/ksaqanooni/legalai.git
-   ```
+- If no documents are uploaded by the admin, the lawyer interacts with a general GPT-4 Turbo model.
+- If the admin uploads documents, the assistant uses those to provide contextually accurate responses.
+- If both admin and the lawyer upload documents, the assistant responds based on the combined document set for enhanced accuracy.
 
-2. **Navigate to the Project Directory**
+### 1. Legal Knowledge Base
+- Indexed Saudi regulations, court rulings, and official circulars
+- Organized using a classification system based on 32 legal categories
 
-   ```bash
-   cd legalai
-   ```
+### 2. GPT-4 Turbo Engine
+- Delivers contextual and accurate legal assistance through prompt engineering
+- Provides fallback answers when no document match is found
 
-3. **Install Required Packages**
+### 3. Case Knowledge Extraction
+- LlamaIndex parses user-uploaded documents (PDF, Word)
+- Extracted content is used to enhance response relevance and accuracy
 
-   ```bash
-   npm install
-   ```
+---
 
-### Database Setup
+## 🧩 Core Components
 
-Before launching your application, you must configure the database schema within Supabase. Navigate to supabase SQL editor and use the following SQL queries to setup the schemas
+### Frontend (Next.js + TypeScript)
+- Responsive and clean UI for users and admins
+- Dedicated views for chat, dashboard, admin panel, and document upload
 
-1. **Create the Users Table**
+### Backend (Supabase + Vercel)
+- Supabase Auth for secure login and session management
+- Supabase Storage for private file handling
+- Row-Level Security (RLS) for access control
+- Vercel for fast and reliable deployment
 
-```sql
--- Create users table
-create table users (
-  id uuid references auth.users not null primary key,
-  full_name text,
-  email text
-);
+### Chat & Embedding
+- GPT-4 Turbo API integration
+- LlamaIndex for document parsing and chunking
+- Semantic search via vector embeddings
+- Fallback GPT responses for general queries
 
--- Enable Row Level Security (RLS)
-alter table public.users enable row level security;
+---
 
--- Create RLS policies for users table
-create policy "Users can insert own data"
-on public.users
-for insert
-to public
-with check (id = auth.uid());
+## 👥 Project Credits
+- **Platform Name**: BNR Platform
+- **Primary Stack**: Next.js 15, Supabase, GPT-4 Turbo, LlamaIndex
+- **Deployment**: [https://legal-ai-phi.vercel.app/](https://legal-ai-phi.vercel.app/)
 
-create policy "Users can update own data"
-on public.users
-for update
-to public
-using (id = auth.uid())
-with check (id = auth.uid());
+---
 
-create policy "Users can view own data"
-on public.users
-for select
-to public
-using (id = auth.uid());
-```
+## 📩 Questions or Suggestions?
+Feel free to reach out or contribute to the project via GitHub.
 
-This SQL statement creates a `users` table with columns for storing user data such as `id`, `full_name` and `email`. The `id` column is a foreign key referencing the `auth.users` table. It also enables RLS for the users table allowing users to read, insert and update their own data
+> "Empowering legal minds through collective intelligence and AI-driven precision."
 
-2. **Create a Trigger Function**
+---
 
-   ```sql
-   create function public.handle_new_user()
-   returns trigger as $$
-   begin
-    insert into public.users (id, full_name, email)
-    values (
-      new.id,
-      new.raw_user_meta_data->>'full_name',
-      new.email
-    );
-    return new;
-   end;
-   $$ language plpgsql security definer;
-   ```
+© 2025 BNR Platform. All rights reserved.
 
-This SQL function is a trigger function that automatically inserts a new user entry into the `public.users` table when a new user signs up via Supabase Auth. It extracts the `id`, `full_name` and `email` from the `auth.users` table and inserts them into the corresponding columns in the `public.users` table.
-
-3. **Create a Trigger**
-
-   ```sql
-   create trigger on_auth_user_created
-     after insert on auth.users
-     for each row execute procedure public.handle_new_user();
-   ```
-
-This SQL statement creates a trigger named `on_auth_user_created` that executes the `public.handle_new_user()` function after each new user is inserted into the `auth.users` table.
-
-4. **Sign Up for an Account**
-
-- Navigate to `http://localhost:3000/signup` in your web browser.
-- Use the sign-up form to create an account. Ensure you use a valid email address that you have access to, as you'll need to verify it in the next step.
-
-5. **Verify Your Email**
-
-- After signing up, Supabase will send an email to the address you provided. Check your inbox for an email from Supabase or your application.
-- Open the email and click on the verification link to confirm your email address. This step is crucial for activating your account and ensuring that you can log in and access the application's features.
-
-6. **Make the rest of the tables, RLS and RPC**
-
-```sql
-
- -- Chat Sessions Table
-  create table
-    public.chat_sessions (
-      id uuid not null default extensions.uuid_generate_v4 (),
-      user_id uuid not null,
-      created_at timestamp with time zone not null default current_timestamp,
-      updated_at timestamp with time zone not null default current_timestamp,
-      chat_title text,
-      constraint chat_sessions_pkey primary key (id),
-      constraint chat_sessions_user_id_fkey foreign key (user_id) references users (id)
-    ) tablespace pg_default;
-  create index if not exists idx_chat_sessions_user_id on public.chat_sessions using btree (user_id) tablespace pg_default;
-
-  create index if not exists chat_sessions_created_at_idx on public.chat_sessions using btree (created_at) tablespace pg_default;
-
-  -- Chat Messages Table
-  create table
-    public.chat_messages (
-      id uuid not null default extensions.uuid_generate_v4 (),
-      chat_session_id uuid not null,
-      content text null,
-      is_user_message boolean not null,
-      sources jsonb null,
-      created_at timestamp with time zone not null default current_timestamp,
-      constraint chat_messages_pkey primary key (id),
-      constraint chat_messages_chat_session_id_fkey foreign key (chat_session_id) references chat_sessions (id) on delete cascade
-    ) tablespace pg_default;
-
-  create index if not exists idx_chat_messages_chat_session_id on public.chat_messages using btree (chat_session_id) tablespace pg_default;
-  -- Enable RLS for chat_messages
-  alter table public.chat_messages enable row level security;
-
-  -- Chat messages RLS policy
-  DROP POLICY IF EXISTS "Users can view messages from their sessions" ON public.chat_messages;
-
-  create policy "Users can view messages from their sessions"
-  on public.chat_messages
-  as permissive
-  for all
-  to public
-  using (
-    chat_session_id IN (
-      SELECT chat_sessions.id
-      FROM chat_sessions
-      WHERE chat_sessions.user_id = auth.uid()
-    )
-  );
-
--- Enable the vector extension
-CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA extensions;
-
--- Note: PostgreSQL currently does not support indexing vectors with more than 2,000 dimensions. If you have hundreds of thousands of documents resulting in hundreds of thousands of vectors, you need to use an embedding model that produces 2,000 dimensions or fewer.
-
--- Vector Database Configuration for Efficient Similarity Search
-
--- Create the vector_documents table
-CREATE TABLE IF NOT EXISTS public.vector_documents (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  embedding extensions.vector(1024),
-  text_content text NOT NULL,
-  title text NOT NULL,
-  timestamp date NOT NULL,
-  ai_title text,
-  ai_description text,
-  ai_maintopics text[],
-  ai_keyentities text[],
-  filter_tags text,
-  page_number integer NOT NULL,
-  total_pages integer NOT NULL,
-  chunk_number integer NOT NULL,
-  total_chunks integer NOT NULL,
-  primary_language text,
-  created_at timestamptz DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamptz DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT vector_documents_pkey PRIMARY KEY (id),
-  CONSTRAINT vector_documents_unique_chunk UNIQUE (user_id, title, "timestamp", page_number, chunk_number),
-  CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
-);
-
--- Create standard indexes
-CREATE INDEX IF NOT EXISTS idx_vector_documents_user_id ON public.vector_documents USING btree (user_id);
-CREATE INDEX IF NOT EXISTS idx_vector_documents_lookup ON public.vector_documents USING btree (
-  user_id,
-  title,
-  "timestamp",
-  page_number,
-  chunk_number
-);
-
--- Create HNSW index for efficient approximate nearest neighbor search
-CREATE INDEX IF NOT EXISTS idx_vector_documents_hnsw_cosine ON public.vector_documents
-USING hnsw (embedding extensions.vector_cosine_ops)
-WITH (m = '16', ef_construction = '64');
-
--- Create function to auto-update timestamp if not exists
-CREATE OR REPLACE FUNCTION update_modified_column()
-RETURNS TRIGGER AS $$
-BEGIN
-   NEW.updated_at = now();
-   RETURN NEW;
-END;
-$$ language 'plpgsql';
-
--- Create trigger for auto-updating the modified timestamp
-CREATE TRIGGER update_vector_documents_modtime
-BEFORE UPDATE ON public.vector_documents
-FOR EACH ROW
-EXECUTE FUNCTION update_modified_column();
-
--- Enable RLS
-ALTER TABLE public.vector_documents ENABLE ROW LEVEL SECURITY;
-
--- Optimized RLS Policies for vector_documents
-CREATE POLICY "Users can only read their own documents"
-ON public.vector_documents
-FOR SELECT
-TO authenticated
-USING (user_id = (SELECT auth.uid()));
-
--- Users Table RLS Policies
-DROP POLICY IF EXISTS "Users can insert own data" ON public.users;
-
-CREATE POLICY "Users can insert own data"
-ON public.users
-FOR INSERT
-TO public
-WITH CHECK (id = (SELECT auth.uid()));
-
-DROP POLICY IF EXISTS "Users can update own data" ON public.users;
-
-CREATE POLICY "Users can update own data"
-ON public.users
-FOR UPDATE
-TO public
-USING (id = (SELECT auth.uid()))
-WITH CHECK (id = (SELECT auth.uid()));
-
-DROP POLICY IF EXISTS "Users can view own data" ON public.users;
-
-CREATE POLICY "Users can view own data"
-ON public.users
-FOR SELECT
-TO public
-USING (id = (SELECT auth.uid()));
-
--- Chat Sessions RLS Policies
-CREATE POLICY "Users can view own chat sessions"
-ON public.chat_sessions
-AS PERMISSIVE
-FOR ALL
-TO public
-USING (user_id = (SELECT auth.uid()));
-
--- Chat Messages RLS Policies
-DROP POLICY IF EXISTS "Users can view messages from their sessions" ON public.chat_messages;
-
-CREATE POLICY "Users can view messages from their sessions"
-ON public.chat_messages
-AS PERMISSIVE
-FOR ALL
-TO public
-USING (
-  chat_session_id IN (
-      SELECT chat_sessions.id
-      FROM chat_sessions
-      WHERE chat_sessions.user_id = (SELECT auth.uid())
-  )
-);
-
--- Create the similarity search function
-CREATE OR REPLACE FUNCTION match_documents(
-  query_embedding vector(1024),
-  match_count int,
-  filter_user_id uuid,
-  filter_files text[],
-  similarity_threshold float DEFAULT 0.70
-)
-RETURNS TABLE (
-  id uuid,
-  text_content text,
-  title text,
-  doc_timestamp date,
-  ai_title text,
-  ai_description text,
-  ai_maintopics text[],
-  ai_keyentities text[],
-  filter_tags text,
-  page_number int,
-  total_pages int,
-  chunk_number int,
-  total_chunks int,
-  similarity float
-)
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  RETURN QUERY
-  SELECT
-      vd.id,
-      vd.text_content,
-      vd.title,
-      vd."timestamp" as doc_timestamp,
-      vd.ai_title,
-      vd.ai_description,
-      vd.ai_maintopics,
-      vd.ai_keyentities,
-      vd.filter_tags,
-      vd.page_number,
-      vd.total_pages,
-      vd.chunk_number,
-      vd.total_chunks,
-      1 - (vd.embedding <=> query_embedding) as similarity
-  FROM
-      vector_documents vd
-  WHERE
-      vd.user_id = filter_user_id
-      AND vd.filter_tags = ANY(filter_files)
-      AND 1 - (vd.embedding <=> query_embedding) > similarity_threshold
-  ORDER BY
-      vd.embedding <=> query_embedding ASC
-  LIMIT LEAST(match_count, 200);
-END;
-$$;
-```
-
-# Document Processing Setup
-
-To enable document upload and chat functionality, you'll need additional API keys:
-
-1. **LlamaIndex Cloud Setup**
-
-- Visit [LlamaIndex Cloud](https://cloud.llamaindex.ai/)
-- Create an account and get your API key
-- Add to `.env.local`:
-  ```
-  LLAMA_CLOUD_API_KEY=your_api_key_here
-  ```
-
-These services enable document processing, embedding storage, and semantic search capabilities in your chat interface.
-
-### Storage Setup and RLS
-
-After setting up the basic database structure, you need to configure storage and its associated security policies in Supabase.
-
-1. **Create Storage Bucket**
-
-First, create a storage bucket named 'userfiles' in your Supabase dashboard:
-
-- Go to Storage in your Supabase dashboard
-- Click "Create Bucket"
-- Name it "userfiles"
-- Set it to private
-
-2. **Configure Storage RLS Policies**
-
-Add the following policies to secure your storage. These policies ensure users can only access their own files and folders.
-
-```sql
--- Policy 1: Allow users to select their own files
-create policy "User can select own files"
-on storage.objects for select
-using ((bucket_id = 'userfiles'::text) AND
-       ((auth.uid())::text = (storage.foldername(name))[1]));
-
--- Policy 2: Allow users to insert their own files
-create policy "User can insert own files"
-on storage.objects for insert
-with check ((bucket_id = 'userfiles'::text) AND
-            ((auth.uid())::text = (storage.foldername(name))[1]));
-
--- Policy 3: Allow users to update their own files
-create policy "User can update own files"
-on storage.objects for update
-using ((bucket_id = 'userfiles'::text) AND
-       ((auth.uid())::text = (storage.foldername(name))[1]));
-
--- Policy 4: Allow users to delete their own files
-create policy "User can delete own files"
-on storage.objects for delete
-using ((bucket_id = 'userfiles'::text) AND
-       ((auth.uid())::text = (storage.foldername(name))[1]));
-
--- Policy 5: Allow public select access to objects
-create policy "Allow public select access"
-on storage.objects for select
-using (true);
-```
-
-These policies accomplish the following:
-
-- Policies 1-4 ensure users can only manage (select, insert, update, delete) files within their own user directory
-- Policy 5 allows public select access to all objects, which is necessary for certain Supabase functionality
-
-The `storage.foldername(name)[1]` function extracts the first part of the file path, which should match the user's ID.
-
-3. **Verify Configuration**
-
-After setting up these policies:
-
-- Users can only access files in their own directory
-- Files are organized by user ID automatically
-- Public select access is maintained for system functionality
-- All other operations are restricted to file owners only
-
-### Environment Variables
-
-Configure your environment by renaming `.env.local.example` to `.env.local` and updating it with your Supabase project details:
-
-- `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL.
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anon (public) key.
-
-**Document Processing:**
-
-- `LLAMA_CLOUD_API_KEY`: Your LlamaIndex Cloud API key
-
-Optional variables for extended functionality:
-
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `SUPABASE_ACCESS_TOKEN`
-- `NEXT_PUBLIC_CLIENT_ID`
-- `CLIENT_SECRET`
-
-For third-party auth configurations, include:
-
-- `GITHUB_CLIENT_ID`
-- `GITHUB_SECRET_ID`
-- `GOOGLE_CLIENT_ID`
-- `GOOGLE_SECRET_ID`
-
-For Openai, Perplexity and Upstash/Redis
-
-- `PERPLEXITY_API_KEY=`
-- `OPENAI_API_KEY=`
-- `UPSTASH_REDIS_REST_URL=`
-- `UPSTASH_REDIS_REST_TOKEN=`
-
-## 📧 Email Templates
-
-To ensure that the authentication flow works correctly with the API routes provided in this codebase, please update your email templates in the Supabase project settings according to the templates provided below:
-
-### Confirm Your Signup
-
-When users sign up, they'll receive an email to confirm their account. The template should look like this:
-
-```html
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Confirm Your Signup</title>
-    <!-- Add styles and head content here -->
-  </head>
-  <body>
-    <div class="container">
-      <div class="header">
-        <h1>Welcome to You Company Name</h1>
-      </div>
-
-      <h2>Confirm your signup</h2>
-      <p>Follow this link to confirm your user:</p>
-      <a
-        href="{{ .SiteURL }}/api/auth/callback?token_hash={{ .TokenHash }}&type=email"
-        >Confirm your email</a
-      >
-    </div>
-  </body>
-</html>
-```
-
-Invite User Email When you invite new users to your platform, they should
-receive an invitation like this:
-
-```html
-<h2>You have been invited</h2>
-<p>
-  You have been invited to create a user on {{ .SiteURL }}. Follow this link to
-  accept the invite:
-</p>
-<a
-  href="{{ .SiteURL }}/api/auth/callback?token_hash={{ .TokenHash }}&type=invite&next=/auth-password-update"
-  >Accept the invite</a
->
-```
-
-Magic Link Email For passwordless login, the magic link email template should be
-set as follows:
-
-```html
-<h2>Magic Link</h2>
-<p>Follow this link to login:</p>
-<a
-  href="{{ .SiteURL }}/api/auth/callback?token_hash={{ .TokenHash }}&type=email"
-  >Log In</a
->
-```
-
-Confirm Email Change When users need to confirm their new email, use the
-following template:
-
-```html
-<h2>Confirm Change of Email</h2>
-<p>
-  Follow this link to confirm the update of your email from {{ .Email }} to {{
-  .NewEmail }}:
-</p>
-<a href="{{ .ConfirmationURL }}">Change Email</a>
-```
-
-Reset Password Email For users that have requested a password reset:
-
-```html
-<h2>Reset Password</h2>
-<p>Follow this link to reset the password for your user:</p>
-<a
-  href="{{ .SiteURL }}/api/auth/callback?token_hash={{ .TokenHash }}&type=recovery&next=/auth-password-update"
-  >Reset Password</a
->
-```
-
-## Code Structure and Philosophy
-
-### Code Organization Over Design Patterns
-
-While design patterns like Factory Pattern and other "clean code" principles have their place, they often lead to overly complex, hard-to-understand codebases. Different developers have different coding styles and approaches - this is natural and okay. Instead of forcing a specific pattern, we focus on keeping related code together in the same folder, making it easier for everyone to understand and maintain.
-
-### Intentional Code Duplication Examples
-
-1. **Shared Code (Minimal)**
-   Only truly universal utilities are shared:
-
-   - `getSession()` for auth
-   - Type definitions for database schema
-   - Error boundary components
-
-2. **Locality of Behavior**
-   Everything else stays with its feature:
-   - Custom hooks live in feature directories
-   - API route handlers stay with their features
-   - State management is feature-specific
-   - Types and interfaces specific to a feature stay in that feature's directory
-
-This approach means:
-
-- Each feature directory is a complete, self-contained unit
-- No hunting through shared directories to understand a feature
-- Changes can be made confidently without side effects
-- New developers can understand features by looking in one place
-
-The goal is maximum independence and clarity, even at the cost of some duplication. Rather than creating complex abstractions or following rigid design patterns, we prioritize keeping related code together and making it easy to understand at a glance. Shared code is limited to only the most basic, unchanging utilities that truly serve every part of the application.
-
-### Project Structure Visualization
-
-Below is a comprehensive dependency graph showing how all components and modules in the project are interconnected. This visualization helps understand the project's architecture and component relationships:
-
-<img src="/full-deps.svg" alt="Project Dependencies Graph" style="width: 100%; margin: 20px 0;">
-
-This dependency graph illustrates:
-
-- Component hierarchies and their relationships
-- Module dependencies across the application
-- Import/Export relationships between files
-- The overall architectural structure of the project
-
-Understanding this graph can help developers:
-
-- Navigate the codebase more effectively
-- Identify potential areas for refactoring
-- Understand component dependencies
-- Visualize the application's architecture
-
-The dependency graph was generated using the following command:
-
-```bash
-npx madge \
-  --image full-deps.svg \
-  --extensions js,jsx,ts,tsx \
-  --ts-config tsconfig.json \
-  --exclude "node_modules|.next|public" \
-  --warning \
-  .
-```
-
-## 📜 License
-
-🔖 Licensed under the MIT License. See LICENSE.md for details.
-
-```
-
-```
