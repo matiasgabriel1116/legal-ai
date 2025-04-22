@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, use } from 'react';
+import React, { useState, useCallback, use, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Menu, ChevronDown } from 'lucide-react';
@@ -32,10 +32,25 @@ const Header: React.FC<HeaderProps> = ({ session }) => {
     [pathname]
   );
 
-  const navigationItems = [
-    { href: '/admin', text: 'Go to admin' },
-    { href: '/aichat', text: 'AI Chat' },
-  ];
+  const [userRole, setUserRole] = useState<string>('');
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!isLoggedIn) return;
+      try {
+        const response = await fetch('/api/user-role');
+        const data = await response.json();
+        setUserRole(data.role);
+      } catch (error) {
+        console.error('Error fetching user role:', error);
+      }
+    };
+    fetchUserRole();
+  }, [isLoggedIn]);
+
+  const navigationItems = userRole === 'admin' 
+    ? [{ href: '/admin', text: 'Go to admin' }, { href: '/aichat', text: 'AI Chat' }]
+    : [{ href: '/aichat', text: 'AI Chat' }];
 
   return (
     <>
