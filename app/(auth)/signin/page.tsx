@@ -15,9 +15,7 @@ export default async function AuthPage() {
       .from('users')
       .select('role')
       .eq('id', session.id)
-      .single();
-
-    console.log("@@@ userData?.role => ", userData?.role)
+      .single<{ role: string }>();
 
     if (userData?.role === 'admin') {
       redirect('/admin');
