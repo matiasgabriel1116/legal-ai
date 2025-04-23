@@ -48,7 +48,7 @@ const Header: React.FC<HeaderProps> = ({ session }) => {
     fetchUserRole();
   }, [isLoggedIn]);
 
-  const navigationItems = userRole === 'admin' 
+  const navigationItems = userRole === 'admin' && isLoggedIn
     ? [{ href: '/admin', text: 'Go to admin' }, { href: '/aichat', text: 'AI Chat' }]
     : [{ href: '/aichat', text: 'AI Chat' }];
 
