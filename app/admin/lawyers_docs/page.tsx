@@ -106,7 +106,7 @@ export default function LawyerDocsPage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Common Documents</h1>
+          <h1 className="text-2xl font-bold">Lawyer Documents</h1>
           <p className="text-sm text-muted-foreground">
             {filteredDocs.length} document{filteredDocs.length !== 1 ? 's' : ''} available
           </p>
