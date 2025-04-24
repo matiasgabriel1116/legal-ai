@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import Sitemark from './SitemarkIcon';
 import SignOut from './SignOut';
 import { ModeToggle } from '@/components/ui/toggleButton';
+import { LanguageButtons } from '@/components/ui/languageButtons';
 
 interface HeaderProps {
   session: Promise<User | null>;
@@ -103,6 +104,9 @@ const Header: React.FC<HeaderProps> = ({ session }) => {
             {/* <div className="ml-2">
               <ModeToggle />
             </div> */}
+            <div className="ml-2">
+              <LanguageButtons />
+            </div>
           </div>
         </div>
       </header>

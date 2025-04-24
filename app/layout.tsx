@@ -31,7 +31,7 @@ export default function RootLayout({
   modal: ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" dir='ltr' suppressHydrationWarning>
       <RootErrorBoundary>
         <body
           className={inter.className}
