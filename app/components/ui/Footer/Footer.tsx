@@ -9,13 +9,14 @@ import { useLanguage } from '@/components/ui/languageContext';
 
 const Footer: React.FC = () => {
   const pathname = usePathname();
-
+  
+  const { t } = useLanguage();
+  
   // If the current pathname is '/aichat'  do not render the component
   if (pathname.startsWith('/aichat')) {
     return null;
   }
   
-  const { t } = useLanguage();
 
   return (
     <footer className="bg-green-600 text-white mt-auto pt-4">

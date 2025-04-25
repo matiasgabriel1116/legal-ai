@@ -71,6 +71,7 @@ import {
   TooltipTrigger
 } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useLanguage } from '@/components/ui/languageContext';
 
 type UserInfo = Pick<Tables<'users'>, 'full_name' | 'email' | 'id'>;
 
@@ -217,6 +218,8 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
     );
   }, [userFiles]);
 
+  const { t } = useLanguage();
+
   // Desktop sidebar content
   const SidebarContent = (
     <div className="flex flex-col h-full">
@@ -224,10 +227,10 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
         // Sign-in prompt when no user
         <div className="flex flex-col items-center justify-center h-[90vh] text-center p-4 space-y-4">
           <h3 className="text-lg font-semibold text-foreground">
-            Sign in to save and view your chats
+            {t('Sign in to save and view your chats')}
           </h3>
           <Button asChild className="rounded-md px-6 py-2 font-normal">
-            <Link href="/signin">Sign in</Link>
+            <Link href="/signin">{t('Sign in')}</Link>
           </Button>
         </div>
       ) : (
@@ -245,10 +248,10 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
                       className="h-8 text-sm"
                     >
                       <MessageSquare className="h-4 w-4 mr-1" />
-                      Chats
+                      {t('Chats')}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>View chat history</TooltipContent>
+                  <TooltipContent>{t('View chat history')}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
 
@@ -262,10 +265,10 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
                       className="h-8 text-sm"
                     >
                       <FileText className="h-4 w-4 mr-1" />
-                      Files
+                      {t('Files')}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>View uploaded files</TooltipContent>
+                  <TooltipContent>{t('View uploaded files')}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
@@ -285,7 +288,7 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
                     <FilePlus className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Create a new conversation</TooltipContent>
+                <TooltipContent>{t('Create a new conversation')}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
@@ -406,42 +409,42 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
               ) : (
                 <>
                   <RenderChatSection
-                    title="Today"
+                    title={t("Today")}
                     chats={categorizedChats.today}
                     currentChatId={currentChatId}
                     handleDeleteClick={handleDeleteClick}
                     onChatSelect={handleChatSelect}
                   />
                   <RenderChatSection
-                    title="Yesterday"
+                    title={t("Yesterday")}
                     chats={categorizedChats.yesterday}
                     currentChatId={currentChatId}
                     handleDeleteClick={handleDeleteClick}
                     onChatSelect={handleChatSelect}
                   />
                   <RenderChatSection
-                    title="Last 7 days"
+                    title={t("Last 7 days")}
                     chats={categorizedChats.last7Days}
                     currentChatId={currentChatId}
                     handleDeleteClick={handleDeleteClick}
                     onChatSelect={handleChatSelect}
                   />
                   <RenderChatSection
-                    title="Last 30 days"
+                    title={t("Last 30 days")}
                     chats={categorizedChats.last30Days}
                     currentChatId={currentChatId}
                     handleDeleteClick={handleDeleteClick}
                     onChatSelect={handleChatSelect}
                   />
                   <RenderChatSection
-                    title="Last 2 month"
+                    title={t("Last 2 month")}
                     chats={categorizedChats.last2Months}
                     currentChatId={currentChatId}
                     handleDeleteClick={handleDeleteClick}
                     onChatSelect={handleChatSelect}
                   />
                   <RenderChatSection
-                    title="Older"
+                    title={t("Older")}
                     chats={categorizedChats.older}
                     currentChatId={currentChatId}
                     handleDeleteClick={handleDeleteClick}
@@ -459,7 +462,7 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
                         {isLoadingMore ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Loading...
+                            {t('Loading...')}
                           </>
                         ) : (
                           'Load More'
@@ -494,7 +497,7 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
             className="fixed left-4 bottom-20 z-50 md:hidden rounded-full shadow-md bg-background"
           >
             <Menu className="h-5 w-5" />
-            <span className="sr-only">Open menu</span>
+            <span className="sr-only">{t('Open menu')}</span>
           </Button>
         </DrawerTrigger>
         <DrawerContent className="h-[85vh] max-h-[90vh] bg-background z-50">
@@ -509,7 +512,7 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
                 className="w-full"
                 onClick={() => setIsOpen(false)}
               >
-                Close
+                {t("Close")}
               </Button>
             </div>
           </div>
@@ -523,20 +526,20 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete Chat</DialogTitle>
+            <DialogTitle>{t('Delete Chat')}</DialogTitle>
           </DialogHeader>
           <DialogDescription>
-            Are you sure you want to delete this chat?
+            {t('Are you sure you want to delete this chat?')}
           </DialogDescription>
           <DialogFooter className="flex justify-end space-x-2 mt-4">
             <Button
               variant="outline"
               onClick={() => setDeleteConfirmationOpen(false)}
             >
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDeleteConfirmation}>
-              Delete
+              {t('Delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -590,6 +593,8 @@ const RenderChatSection: FC<RenderChatSectionProps> = memo(
     };
 
     if (optimisticChats.length === 0) return null;
+
+    const { t } = useLanguage();
 
     return (
       <>
@@ -649,21 +654,21 @@ const RenderChatSection: FC<RenderChatSectionProps> = memo(
                           className="text-sm cursor-not-allowed"
                         >
                           <Share className="mr-2 h-4 w-4" />
-                          <span>Share</span>
+                          <span>{t('Share')}</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleOpenRename(id)}
                           className="text-sm"
                         >
                           <Edit className="mr-2 h-4 w-4" />
-                          <span>Rename</span>
+                          <span>{t('Rename')}</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleDeleteClick(id)}
                           className="text-destructive text-sm"
                         >
                           <Trash className="mr-2 h-4 w-4" />
-                          <span>Delete</span>
+                          <span>{t('Delete')}</span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -677,7 +682,7 @@ const RenderChatSection: FC<RenderChatSectionProps> = memo(
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Rename Chat</DialogTitle>
+              <DialogTitle>{t('Rename Chat')}</DialogTitle>
             </DialogHeader>
             <form
               onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
@@ -716,9 +721,9 @@ const RenderChatSection: FC<RenderChatSectionProps> = memo(
                   variant="outline"
                   onClick={handleCloseDialog}
                 >
-                  Cancel
+                  {t('Cancel')}
                 </Button>
-                <Button type="submit">Save</Button>
+                <Button type="submit">{t('Save')}</Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -750,4 +755,4 @@ function SubmitButton() {
   );
 }
 
-export default CombinedDrawer;
+export default memo(CombinedDrawer);

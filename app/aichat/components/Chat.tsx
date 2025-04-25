@@ -49,6 +49,7 @@ import {
 } from 'lucide-react';
 
 import type { Tables } from '@/types/database';
+import { useLanguage } from '@/components/ui/languageContext';
 
 type ChatSessionWithMessages = Pick<
   Tables<'chat_sessions'>,
@@ -128,21 +129,21 @@ const ChatComponent: React.FC<ChatProps> = ({
 
   const { mutate } = useSWRConfig();
 
+  const { t } = useLanguage();
+
   return (
     <div className="flex flex-col h-screen md:h-[calc(100vh-48px)] w-full mx-auto">
       {messages.length === 0 ? (
         <div className="flex flex-col justify-center items-center h-[90vh] text-center px-4">
           <h2 className="text-2xl font-semibold text-foreground/80 pb-2">
-            Chat with our AI Assistant
+            {t('Chat with our AI Assistant')}
           </h2>
 
           <p className="text-muted-foreground pb-2 max-w-2xl">
-            Experience the power of AI-driven conversations with our chat
-            template. Ask questions on any topic and get informative responses
-            instantly.
+            {t('Experience the power of AI-driven conversations with our chat template. Ask questions on any topic and get informative responses instantly.')}
           </p>
           <h2 className="text-2xl font-semibold text-foreground/80">
-            Start chatting now and enjoy the AI experience!
+            {t('Start chatting now and enjoy the AI experience!')}
           </h2>
         </div>
       ) : (
@@ -298,7 +299,7 @@ const ChatComponent: React.FC<ChatProps> = ({
             <div className="flex justify-between items-center mt-2 px-1 py-1 gap-2">
               {/* Model Type Select */}
               <div className="flex-1 max-w-[180px] text-right">
-                <p>Select model:</p>
+                <p>{t('Select model:')}</p>
               </div>
               <div className="flex-1 ml-2">
                 <DropdownMenu
@@ -384,6 +385,8 @@ const MessageInput = ({
     }
   };
 
+  const { t } = useLanguage();
+
   return (
     <form onSubmit={handleSubmit}>
       <div className="relative">
@@ -391,7 +394,7 @@ const MessageInput = ({
           value={input}
           onChange={(e) => handleInputChange(e)}
           onKeyDown={handleKeyDown}
-          placeholder="Type your message..."
+          placeholder={t("Type your message...")}
           disabled={status !== 'ready'}
           className="min-h-12 resize-none rounded-xl pr-24 bg-background/90 backdrop-blur-sm border-input/30 focus:border-primary focus:ring-2 focus:ring-primary/30 p-4 text-base transition-all duration-200 shadow-inner"
           autoFocus
