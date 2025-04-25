@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Linkedin, Youtube } from 'lucide-react';
+import { useLanguage } from '@/components/ui/languageContext';
 
 const Footer: React.FC = () => {
   const pathname = usePathname();
@@ -13,21 +14,23 @@ const Footer: React.FC = () => {
   if (pathname.startsWith('/aichat')) {
     return null;
   }
+  
+  const { t } = useLanguage();
 
   return (
     <footer className="bg-green-600 text-white mt-auto pt-4">
       <div className="max-w-[1600px] mx-auto px-4 flex flex-wrap justify-center items-start gap-4">
         {/* Contact Section */}
         <div className="w-[48%] sm:w-[48%] md:w-[21%] lg:w-[21%] xl:w-[30%] flex flex-col gap-3 p-0">
-          <h5 className="text-xl font-bold">Contact</h5>
-          <p className="text-sm text-white">Example Company Name</p>
-          <p className="text-sm text-white">123 Example Street, City 12345</p>
-          <p className="text-sm text-white mb-1">ID: 12345678</p>
+          <h5 className="text-xl font-bold">{t('Contact')}</h5>
+          <p className="text-sm text-white">{t('Example Company Name')}</p>
+          <p className="text-sm text-white">{t('123 Example Street, City 12345')}</p>
+          <p className="text-sm text-white mb-1">{t('ID: 12345678')}</p>
           <Link href="#" className="text-sky-300 hover:text-sky-200">
-            Privacy Policy
+            {t('Privacy Policy')}
           </Link>
           <Link href="#" className="text-sky-300 hover:text-sky-200">
-            Terms of Service
+            {t('Terms of Service')}
           </Link>
         </div>
 
@@ -38,21 +41,21 @@ const Footer: React.FC = () => {
 
         {/* Information Section */}
         <div className="w-[42%] sm:w-[42%] md:w-[23%] lg:w-[23%] xl:w-[23%] flex flex-col gap-3 p-0">
-          <h5 className="text-xl font-bold">Information:</h5>
+          <h5 className="text-xl font-bold">{t('Information:')}</h5>
           <Link href="#" className="text-sky-300 hover:text-sky-200">
-            About Us
+            {t('About Us')}
           </Link>
           <Link href="#" className="text-sky-300 hover:text-sky-200">
-            Services
+            {t('Services')}
           </Link>
           <Link href="#" className="text-sky-300 hover:text-sky-200">
-            FAQ
+            {t('FAQ')}
           </Link>
           <Link href="#" className="text-sky-300 hover:text-sky-200">
-            How It Works
+            {t('How It Works')}
           </Link>
           <Link href="#" className="text-sky-300 hover:text-sky-200">
-            Support
+            {t('Support')}
           </Link>
         </div>
 
@@ -68,20 +71,20 @@ const Footer: React.FC = () => {
 
         {/* Newsletter Section */}
         <div className="w-full sm:w-full md:w-[41%] lg:w-[41%] xl:w-[41%] flex flex-col gap-3 px-1">
-          <h5 className="text-xl font-bold">Subscribe to Our Newsletter</h5>
+          <h5 className="text-xl font-bold">{t('Subscribe to Our Newsletter')}</h5>
           <p className="text-base text-white">
-            📧 Regular updates about our services
+            📧 {t('Regular updates about our services')}
           </p>
           <p className="text-base text-white">
-            🔔 Special offers and promotions
+            🔔 {t('Special offers and promotions')}
           </p>
-          <p className="text-base text-white">💼 Industry news and insights</p>
+          <p className="text-base text-white">💼 {t('Industry news and insights')}</p>
 
           <Button
             className="mt-4 max-w-[200px] self-center md:self-start"
             asChild
           >
-            <Link href="#">Subscribe Now</Link>
+            <Link href="#">{t('Subscribe Now')}</Link>
           </Button>
         </div>
       </div>
@@ -91,7 +94,7 @@ const Footer: React.FC = () => {
       <div className="max-w-[1600px] mx-auto px-4 flex justify-between items-center py-2">
         <div className="flex-grow">
           <Link href="#" className="text-white hover:text-gray-200">
-            Example Company &copy; {new Date().getFullYear()}
+            {t('Example Company')} &copy; {new Date().getFullYear()}
           </Link>
         </div>
         <div className="flex items-center">

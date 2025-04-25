@@ -13,6 +13,7 @@ import Sitemark from './SitemarkIcon';
 import SignOut from './SignOut';
 import { ModeToggle } from '@/components/ui/toggleButton';
 import { LanguageButtons } from '@/components/ui/languageButtons';
+import { useLanguage } from '@/components/ui/languageContext';
 
 interface HeaderProps {
   session: Promise<User | null>;
@@ -33,6 +34,8 @@ const Header: React.FC<HeaderProps> = ({ session }) => {
     [pathname]
   );
 
+  const { t } = useLanguage();
+
   const [userRole, setUserRole] = useState<string>('');
 
   useEffect(() => {
@@ -50,8 +53,8 @@ const Header: React.FC<HeaderProps> = ({ session }) => {
   }, [isLoggedIn]);
 
   const navigationItems = userRole === 'admin' && isLoggedIn
-    ? [{ href: '/admin', text: 'Go to admin' }, { href: '/aichat', text: 'AI Chat' }]
-    : [{ href: '/aichat', text: 'AI Chat' }];
+    ? [{ href: '/admin', text: t('Go to admin') }, { href: '/aichat', text: t('AI Chat') }]
+    : [{ href: '/aichat', text: t('AI Chat') }];
 
   return (
     <>
@@ -77,7 +80,7 @@ const Header: React.FC<HeaderProps> = ({ session }) => {
                 asChild
                 onMouseEnter={() => router.prefetch(item.href)}
               >
-                <Link href={item.href} prefetch={false}>
+                <Link href={item.href} prefetch={false} data-translate={item.text}>
                   {item.text}
                 </Link>
               </Button>
@@ -95,8 +98,8 @@ const Header: React.FC<HeaderProps> = ({ session }) => {
                 }`}
                 asChild
               >
-                <Link href="/signin" prefetch={false}>
-                  Sign in
+                <Link href="/signin" prefetch={false} data-translate={'Sign in'}>
+                  {t('Sign in')}
                 </Link>
               </Button>
             )}

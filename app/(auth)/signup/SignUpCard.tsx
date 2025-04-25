@@ -18,6 +18,7 @@ import {
   PopoverContent,
   PopoverTrigger
 } from '@/components/ui/popover';
+import { useLanguage } from '@/components/ui/languageContext';
 
 export default function SignInCard() {
   const [email, setEmail] = useState('');
@@ -158,16 +159,18 @@ export default function SignInCard() {
     }
   }, [password, showPasswordRequirements]);
 
+  const { t } = useLanguage();
+
   return (
     <div className="flex justify-center items-center">
       <div className="w-full sm:w-[350px] md:w-[400px]">
         <Card className="shadow-md">
           <CardContent className="p-4 pt-6 space-y-4">
-            <h1 className="text-2xl font-semibold text-foreground">Sign Up</h1>
+            <h1 className="text-2xl font-semibold text-foreground">{t('Sign Up')}</h1>
 
             <form action={handleSubmit} noValidate className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('Email')}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -187,7 +190,7 @@ export default function SignInCard() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
+                <Label htmlFor="fullName">{t('Full Name')}</Label>
                 <Input
                   id="fullName"
                   name="fullName"
@@ -199,7 +202,7 @@ export default function SignInCard() {
               </div>
 
               <div className="space-y-2 relative">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t('Password')}</Label>
                 <Popover
                   open={showPasswordRequirements}
                   onOpenChange={setShowPasswordRequirements}
@@ -238,7 +241,7 @@ export default function SignInCard() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label htmlFor="confirmPassword">{t('Confirm Password')}</Label>
                 <Input
                   name="confirmPassword"
                   placeholder="••••••"
@@ -277,7 +280,7 @@ export default function SignInCard() {
               <div className="flex justify-center">
                 <Button asChild variant="outline" className="w-auto">
                   <Link href="/signin" replace>
-                    Already have an account?
+                    {t('Already have an account?')}
                   </Link>
                 </Button>
               </div>
@@ -332,10 +335,11 @@ interface PasswordRequirementsProps {
 }
 
 function PasswordRequirements({ requirements }: PasswordRequirementsProps) {
+  const { t } = useLanguage();
   return (
     <div>
       <p className="text-sm font-medium mb-1 text-foreground">
-        Password Requirements:
+        {t('Password Requirements:')}
       </p>
       <ul className="space-y-1 m-0">
         <li className="flex items-center gap-2 text-sm">
@@ -349,7 +353,7 @@ function PasswordRequirements({ requirements }: PasswordRequirementsProps) {
               requirements.length ? 'text-foreground' : 'text-muted-foreground'
             }
           >
-            At least 6 characters
+            {t('At least 6 characters')}
           </span>
         </li>
         <li className="flex items-center gap-2 text-sm">
@@ -363,7 +367,7 @@ function PasswordRequirements({ requirements }: PasswordRequirementsProps) {
               requirements.number ? 'text-foreground' : 'text-muted-foreground'
             }
           >
-            At least one number
+            {t('At least one number')}
           </span>
         </li>
       </ul>

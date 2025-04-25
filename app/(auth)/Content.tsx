@@ -1,5 +1,7 @@
+'use client'
 import React from 'react';
 import { Gavel, Search, MessageCircle, Gift } from 'lucide-react';
+import { useLanguage } from '@/components/ui/languageContext';
 
 const items = [
   {
@@ -28,15 +30,17 @@ const items = [
   }
 ];
 
+
 export default function Content() {
+  const { t } = useLanguage();
   return (
     <div className="flex flex-col self-center gap-8 max-w-[450px]">
       {items.map((item, index) => (
         <div key={index} className="flex gap-4">
           <div className="flex-shrink-0 mt-0.5">{item.icon}</div>
           <div>
-            <h3 className="font-medium mb-1.5">{item.title}</h3>
-            <p className="text-sm text-muted-foreground">{item.description}</p>
+            <h3 className="font-medium mb-1.5">{t(item.title)}</h3>
+            <p className="text-sm text-muted-foreground">{t(item.description)}</p>
           </div>
         </div>
       ))}

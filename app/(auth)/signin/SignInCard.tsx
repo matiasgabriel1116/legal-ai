@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useContext } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { login } from '../action';
 import { useRouter } from 'next/navigation';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
+import { useLanguage } from '@/components/ui/languageContext';
 
 export default function SignInCard() {
   const router = useRouter();
@@ -50,9 +51,11 @@ export default function SignInCard() {
     if (validateInputs()) {
       const result = await login(formData);
 
+      const { t } = useLanguage();
+
       setAlertMessage({
         type: result.success ? 'success' : 'error',
-        message: result.message
+        message: t(result.message)
       });
 
       if (result.success) {
@@ -87,9 +90,11 @@ export default function SignInCard() {
     return isValid;
   }, [email, password]);
 
+  const { t } = useLanguage();
+
   return (
     <Card className="flex flex-col self-center w-full sm:w-[450px] p-4 sm:p-6 gap-4 shadow-[0px_5px_15px_rgba(0,0,0,0.05),0px_15px_35px_-5px_rgba(25,28,33,0.05),0px_0px_0px_1px_rgba(0,0,0,0.05)]">
-      <h1 className="text-[clamp(2rem,10vw,2.15rem)] font-bold">Sign In</h1>
+      <h1 className="text-[clamp(2rem,10vw,2.15rem)] font-bold">{t('Sign In')}</h1>
 
       <form
         action={handleSubmit}
@@ -97,7 +102,7 @@ export default function SignInCard() {
         className="flex flex-col w-full gap-4"
       >
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t('Email')}</Label>
           <Input
             id="email"
             type="email"
@@ -117,14 +122,14 @@ export default function SignInCard() {
 
         <div className="space-y-2">
           <div className="flex justify-between">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t('Password')}</Label>
             <Button
               type="button"
               variant="link"
               onClick={handleClickOpen}
               className="p-0 h-auto"
             >
-              Forgot your password?
+              {t('Forgot your password?')}
             </Button>
           </div>
           <Input
@@ -153,7 +158,7 @@ export default function SignInCard() {
             htmlFor="remember-me"
             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
-            Remember me
+            {t('Remember me')}
           </Label>
         </div>
 
@@ -175,7 +180,8 @@ export default function SignInCard() {
 
         <Button asChild variant="outline" className="self-center">
           <Link href="/signup" replace>
-            Don&apos;t have an account? Sign up
+            {t("Don't have an account?")}
+            {t('Sign up')}
           </Link>
         </Button>
       </form>
@@ -206,10 +212,11 @@ export default function SignInCard() {
 
 function SubmitButton() {
   const { pending } = useFormStatus();
+  const { t } = useLanguage();
 
   return (
     <Button type="submit" className="w-full mb-1" disabled={pending}>
-      {pending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : 'Sign In'}
+      {pending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : t('Sign In')}
     </Button>
   );
 }
