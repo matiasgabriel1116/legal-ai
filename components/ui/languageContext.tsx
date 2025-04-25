@@ -174,6 +174,10 @@ export const translations = {
     'Uploading...': 'Uploading...',
     'Analyzing...': 'Analyzing...',
     'Saving to Database...': 'Saving to Database...',
+    'Subscription changed to': 'Subscription changed to',
+    'Failed to update subscription': 'Failed to update subscription',
+    'User deleted successfully': 'User deleted successfully',
+    'Failed to delete user': 'Failed to delete user',
   },
   ar: {
     'Sign in': 'تسجيل الدخول',
@@ -346,6 +350,10 @@ export const translations = {
     'Uploading...': 'جاري التحميل...',
     'Analyzing...': 'تحليل...',
     'Saving to Database...': 'حفظ في قاعدة البيانات...',
+    'Subscription changed to': 'تم تغيير الاشتراك إلى',
+    'Failed to update subscription': 'فشل تحديث الاشتراك',
+    'User deleted successfully': 'تم حذف المستخدم بنجاح',
+    'Failed to delete user': 'فشل في حذف المستخدم'
   }
 };
 

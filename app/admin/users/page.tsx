@@ -64,38 +64,39 @@ export default function UsersPage() {
   };
 
   const toggleSubscription = async (userId: string, currentType: SubscriptionType) => {
+    const { t } = useLanguage();
     try {
       const newType = currentType === "free" ? "premium" : "free";
       await handleSubscriptionToggle(userId, newType);
-      toast.success(`Subscription changed to ${newType}`);
-      
+      toast.success(`${t('Subscription changed to')} ${newType}`);
+
       // Optimistic update
-      setUsers(prevUsers => 
-        prevUsers.map(user => 
-          user.id === userId 
-            ? { ...user, subscription_type: newType } 
+      setUsers(prevUsers =>
+        prevUsers.map(user =>
+          user.id === userId
+            ? { ...user, subscription_type: newType }
             : user
         )
       );
     } catch (error) {
       console.error('Error toggling subscription:', error);
-      toast.error('Failed to update subscription');
+      toast.error(t('Failed to update subscription'));
       await loadUsers(); // Revert to server state
     }
   };
 
   const deleteUser = async (userId: string) => {
     if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
-    
+
     try {
       await handleDeleteUser(userId);
-      toast.success('User deleted successfully');
-      
+      toast.success(t('User deleted successfully'));
+
       // Optimistic update
       setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
     } catch (error) {
       console.error('Error deleting user:', error);
-      toast.error('Failed to delete user');
+      toast.error(t('Failed to delete user'));
       await loadUsers(); // Revert to server state
     }
   };
@@ -110,7 +111,7 @@ export default function UsersPage() {
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">{t('User Management')}</h1>
-        
+
         <div className="flex gap-4">
           <Input
             placeholder={t("Enter lawyer's email")}
@@ -119,8 +120,8 @@ export default function UsersPage() {
             className="min-w-[300px]"
             type="email"
           />
-          <Button 
-            onClick={inviteUser} 
+          <Button
+            onClick={inviteUser}
             disabled={isLoading || !newUserEmail.trim()}
           >
             {isLoading ? t('Sending...') : t('Invite Lawyer')}
@@ -152,8 +153,8 @@ export default function UsersPage() {
                   />
                 </TableCell>
                 <TableCell>
-                  <Button 
-                    variant="destructive" 
+                  <Button
+                    variant="destructive"
                     size="sm"
                     onClick={() => deleteUser(user.id)}
                   >
