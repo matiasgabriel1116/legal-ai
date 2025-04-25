@@ -482,7 +482,7 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
   return (
     <>
       {/* Desktop sidebar */}
-      <div className="hidden md:flex fixed inset-yt left-0 z-20 w-[250px] lg:w-[280px] xl:w-[300px] 2xl:w-[350px] bg-background/90 border-r border-border shadow-sm flex-col h-full">
+      <div className="hidden md:flex fixed inset-y-0 ltr:left-0 rtl:right-0 z-20 w-[250px] lg:w-[280px] xl:w-[300px] 2xl:w-[350px] bg-background/90 border-r border-border rtl:border-l rtl:border-r-0 shadow-sm flex-col h-full">
         {SidebarContent}
       </div>
       <div className="md:pl-[200px] lg:pl-[250px] xl:pl-[300px] 2xl:pl-[350px]">

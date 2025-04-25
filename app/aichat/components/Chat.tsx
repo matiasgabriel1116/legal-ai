@@ -134,7 +134,7 @@ const ChatComponent: React.FC<ChatProps> = ({
   return (
     <div className="flex flex-col h-screen md:h-[calc(100vh-48px)] w-full mx-auto">
       {messages.length === 0 ? (
-        <div className="flex flex-col justify-center items-center h-[90vh] text-center px-4">
+        <div className="flex flex-col justify-center items-center h-[90vh] text-center ltr:px-4 rtl:px-4">
           <h2 className="text-2xl font-semibold text-foreground/80 pb-2">
             {t('Chat with our AI Assistant')}
           </h2>
@@ -385,7 +385,7 @@ const MessageInput = ({
     }
   };
 
-  const { t } = useLanguage();
+  const { t, dir } = useLanguage();
 
   return (
     <form onSubmit={handleSubmit}>
@@ -396,10 +396,10 @@ const MessageInput = ({
           onKeyDown={handleKeyDown}
           placeholder={t("Type your message...")}
           disabled={status !== 'ready'}
-          className="min-h-12 resize-none rounded-xl pr-24 bg-background/90 backdrop-blur-sm border-input/30 focus:border-primary focus:ring-2 focus:ring-primary/30 p-4 text-base transition-all duration-200 shadow-inner"
+          className="min-h-12 resize-none rounded-xl pr-24 bg-background/90 backdrop-blur-sm border-input/30 focus:border-primary focus:ring-2 focus:ring-primary/30 p-4 text-base transition-all duration-200 shadow-inner rtl:space-x-reverse"
           autoFocus
         />
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-2">
+        <div className={`absolute ltf:right-3 rtl:left-3 top-1/2 -translate-y-1/2 flex items-center space-x-2`}>
           {messagesLength > 0 && (
             <Button
               onClick={() => reload()}
