@@ -399,7 +399,7 @@ const MessageInput = ({
           className="min-h-12 resize-none rounded-xl pr-24 bg-background/90 backdrop-blur-sm border-input/30 focus:border-primary focus:ring-2 focus:ring-primary/30 p-4 text-base transition-all duration-200 shadow-inner rtl:space-x-reverse"
           autoFocus
         />
-        <div className={`absolute ltf:right-3 rtl:left-3 top-1/2 -translate-y-1/2 flex items-center space-x-2`}>
+        <div className={`absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 flex items-center ltr:space-x-2 rtl:space-x-reverse rtl:space-x-2`}>
           {messagesLength > 0 && (
             <Button
               onClick={() => reload()}
