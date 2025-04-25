@@ -15,6 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { fetchUsers, handleSubscriptionToggle, handleDeleteUser, inviteUserByEmail } from './fetch';
 import { User } from 'lucide-react';
+import { useLanguage } from '@/components/ui/languageContext';
 
 type SubscriptionType = "free" | "paid" | "premium"; // Expanded to 'paid' types for real-world proj
 type Role = "lawyer" | "admin";
@@ -103,14 +104,16 @@ export default function UsersPage() {
     loadUsers();
   }, []);
 
+  const { t } = useLanguage();
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">User Management</h1>
+        <h1 className="text-3xl font-bold">{t('User Management')}</h1>
         
         <div className="flex gap-4">
           <Input
-            placeholder="Enter lawyer's email"
+            placeholder={t("Enter lawyer's email")}
             value={newUserEmail}
             onChange={(e) => setNewUserEmail(e.target.value)}
             className="min-w-[300px]"
@@ -120,7 +123,7 @@ export default function UsersPage() {
             onClick={inviteUser} 
             disabled={isLoading || !newUserEmail.trim()}
           >
-            {isLoading ? 'Sending...' : 'Invite Lawyer'}
+            {isLoading ? t('Sending...') : t('Invite Lawyer')}
           </Button>
         </div>
       </div>
@@ -128,20 +131,20 @@ export default function UsersPage() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Premium Access</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead>{t('Name')}</TableHead>
+            <TableHead>{t('Email')}</TableHead>
+            <TableHead>{t('Role')}</TableHead>
+            <TableHead>{t('Premium Access')}</TableHead>
+            <TableHead>{t('Actions')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {users.length > 0 ? (
             users.map((user) => (
               <TableRow key={user.id}>
-                <TableCell>{user.full_name || 'Unnamed User'}</TableCell>
+                <TableCell>{user.full_name || t('Unnamed User')}</TableCell>
                 <TableCell>{user.email}</TableCell>
-                <TableCell className="capitalize">{user?.role || 'N/A'}</TableCell>
+                <TableCell className="capitalize">{user?.role || t('N/A')}</TableCell>
                 <TableCell>
                   <Switch
                     checked={user.subscription_type !== "free"}
@@ -154,7 +157,7 @@ export default function UsersPage() {
                     size="sm"
                     onClick={() => deleteUser(user.id)}
                   >
-                    Delete
+                    {t('Delete')}
                   </Button>
                 </TableCell>
               </TableRow>
@@ -162,7 +165,7 @@ export default function UsersPage() {
           ) : (
             <TableRow>
               <TableCell colSpan={5} className="text-center py-4">
-                No users found
+                {t('No users found')}
               </TableCell>
             </TableRow>
           )}

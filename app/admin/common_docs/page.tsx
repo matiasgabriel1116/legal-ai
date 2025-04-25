@@ -24,6 +24,7 @@ import { fetchCommonDocs, deleteDocument } from './fetch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
+import { useLanguage } from '@/components/ui/languageContext';
 
 export default function LawyerDocsPage() {
   const [docs, setDocs] = useState<CommonDocument[]>([]);
@@ -101,19 +102,21 @@ export default function LawyerDocsPage() {
     (doc.ai_title && doc.ai_title.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const { t } = useLanguage();
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Common Documents</h1>
+          <h1 className="text-2xl font-bold">{t('Common Documents')}</h1>
           <p className="text-sm text-muted-foreground">
-            {filteredDocs.length} document{filteredDocs.length !== 1 ? 's' : ''} available
+            {filteredDocs.length} {t('document')}{filteredDocs.length !== 1 ? 's' : ''} {t('available')}
           </p>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <Input
-            placeholder="Search documents..."
+            placeholder={t("Search documents...")}
             className="w-full sm:w-64"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -134,7 +137,7 @@ export default function LawyerDocsPage() {
                 onClick={() => handleSort('title')}
               >
                 <div className="flex items-center gap-1">
-                  Title
+                  {t('Title')}
                   {sortConfig?.key === 'title' && (
                     <span>{sortConfig.direction === 'ascending' ? '↑' : '↓'}</span>
                   )}
@@ -145,7 +148,7 @@ export default function LawyerDocsPage() {
                 onClick={() => handleSort('ai_title')}
               >
                 <div className="flex items-center gap-1">
-                  AI Title
+                  {t('AI Title')}
                   {sortConfig?.key === 'ai_title' && (
                     <span>{sortConfig.direction === 'ascending' ? '↑' : '↓'}</span>
                   )}
@@ -156,7 +159,7 @@ export default function LawyerDocsPage() {
                 onClick={() => handleSort('total_pages')}
               >
                 <div className="flex items-center gap-1">
-                  Pages
+                  {t('Pages')}
                   {sortConfig?.key === 'total_pages' && (
                     <span>{sortConfig.direction === 'ascending' ? '↑' : '↓'}</span>
                   )}
@@ -167,7 +170,7 @@ export default function LawyerDocsPage() {
                 onClick={() => handleSort('created_at')}
               >
                 <div className="flex items-center gap-1">
-                  Created At
+                  {t('Created At')}
                   {sortConfig?.key === 'created_at' && (
                     <span>{sortConfig.direction === 'ascending' ? '↑' : '↓'}</span>
                   )}
@@ -178,13 +181,13 @@ export default function LawyerDocsPage() {
                 onClick={() => handleSort('admin_name')}
               >
                 <div className="flex items-center gap-1">
-                  Uploaded By
+                  {t('Uploaded By')}
                   {sortConfig?.key === 'admin_name' && (
                     <span>{sortConfig.direction === 'ascending' ? '↑' : '↓'}</span>
                   )}
                 </div>
               </TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="text-right">{t('Actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -204,7 +207,7 @@ export default function LawyerDocsPage() {
             ) : filteredDocs.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center h-24">
-                  {searchTerm ? 'No documents match your search' : 'No documents available'}
+                  {searchTerm ? t('No documents match your search') : t('No documents available')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -215,7 +218,7 @@ export default function LawyerDocsPage() {
                       <FileSearch className="h-4 w-4 text-muted-foreground" />
                       <span className="truncate max-w-[180px]">{doc.title}</span>
                       {doc.id === docs[0]?.id && (
-                        <Badge variant="secondary">New</Badge>
+                        <Badge variant="secondary">{t('New')}</Badge>
                       )}
                     </div>
                   </TableCell>
@@ -223,7 +226,7 @@ export default function LawyerDocsPage() {
                   <TableCell>{doc.total_pages}</TableCell>
                   <TableCell>
                     <div className="flex flex-col">
-                      <span>{doc.created_at ? formatDate(doc.created_at) : 'N/A'}</span>
+                      <span>{doc.created_at ? formatDate(doc.created_at) : t('N/A')}</span>
                       <span className="text-xs text-muted-foreground">
                         {doc.created_at ? new Date(doc.created_at).toLocaleTimeString() : ''}
                       </span>
@@ -231,7 +234,7 @@ export default function LawyerDocsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <span>{doc.admin_name || 'Unknown admin'}</span>
+                      <span>{doc.admin_name || t('Unknown admin')}</span>
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
@@ -247,7 +250,7 @@ export default function LawyerDocsPage() {
                           className="gap-2"
                         >
                           <View className="h-4 w-4" />
-                          Preview
+                          {t('Preview')}
                         </DropdownMenuItem>
                         
                         <DropdownMenuItem 
@@ -255,7 +258,7 @@ export default function LawyerDocsPage() {
                           className="gap-2"
                         >
                           <Download className="h-4 w-4" />
-                          Download
+                          {t('Download')}
                         </DropdownMenuItem>
                         
                         <DropdownMenuItem 
@@ -263,7 +266,7 @@ export default function LawyerDocsPage() {
                           className="gap-2 text-destructive focus:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
-                          Delete
+                          {t('Delete')}
                         </DropdownMenuItem>
                       
                       </DropdownMenuContent>

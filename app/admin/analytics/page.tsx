@@ -19,6 +19,7 @@ import { Card } from '@/components/ui/card';
 import 'chartjs-adapter-date-fns';
 import { fetchUserDocumentStats, fetchTimelineStats } from './fetch';
 import type { DocumentStats, TimelineStats } from './fetch';
+import { useLanguage } from '@/components/ui/languageContext';
 
 ChartJS.register(
   CategoryScale,
@@ -59,6 +60,7 @@ const COLORS = {
 export default function AnalyticsPage() {
   const [userStats, setUserStats] = useState<DocumentStats[]>([]);
   const [timelineStats, setTimelineStats] = useState<TimelineStats[]>([]);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const loadStats = async () => {
@@ -76,10 +78,11 @@ export default function AnalyticsPage() {
     loadStats();
   }, []);
 
+
   const userChartData = {
     labels: userStats.map(stat => stat.user_full_name),
     datasets: [{
-      label: 'Total Pages',
+      label: t('Total Pages'),
       data: userStats.map(stat => stat.total_pages),
       backgroundColor: COLORS.primary.light,
       borderColor: COLORS.primary.main,
@@ -92,7 +95,7 @@ export default function AnalyticsPage() {
     labels: timelineStats.map(stat => stat.date),
     datasets: [
       {
-        label: 'Admin Uploads',
+        label: t('Admin Uploads'),
         data: timelineStats.map(stat => stat.admin_uploads),
         borderColor: COLORS.secondary.main,
         backgroundColor: COLORS.secondary.light,
@@ -101,7 +104,7 @@ export default function AnalyticsPage() {
         fill: true,
       },
       {
-        label: 'User Uploads',
+        label: t('User Uploads'),
         data: timelineStats.map(stat => stat.user_uploads),
         borderColor: COLORS.accent.main,
         backgroundColor: COLORS.accent.light,
@@ -171,10 +174,10 @@ export default function AnalyticsPage() {
 
   return (
     <div className="p-6 space-y-6 bg-gray-50">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">User/Document Analytics</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">{t('User/Document Analytics')}</h1>
       
       <Card className="p-4 bg-white shadow-sm">
-        <h2 className="text-xl font-semibold text-gray-700 mb-4">User Document Pages</h2>
+        <h2 className="text-xl font-semibold text-gray-700 mb-4">{t('User Document Pages')}</h2>
         <div className="h-[400px]">
           <Bar
             data={userChartData}
@@ -184,7 +187,7 @@ export default function AnalyticsPage() {
                 ...chartOptions.plugins,
                 title: {
                   display: true,
-                  text: 'Total Pages by User',
+                  text: t('Total Pages by User'),
                   color: COLORS.neutral.main,
                 },
               }
@@ -194,7 +197,7 @@ export default function AnalyticsPage() {
       </Card>
 
       <Card className="p-4 bg-white shadow-sm">
-        <h2 className="text-xl font-semibold text-gray-700 mb-4">Upload Timeline</h2>
+        <h2 className="text-xl font-semibold text-gray-700 mb-4">{t('Upload Timeline')}</h2>
         <div className="h-[400px]">
           <Line
             data={timelineChartData}
@@ -204,7 +207,7 @@ export default function AnalyticsPage() {
                 ...timelineOptions.plugins,
                 title: {
                   display: true,
-                  text: 'Document Uploads Over Time',
+                  text: t('Document Uploads Over Time'),
                   color: COLORS.neutral.main,
                 },
               }

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Users, FileText, LineChart, BarChart } from 'lucide-react';
+import { useLanguage } from '@/components/ui/languageContext';
 
 const iconMap = {
   'users': Users,
@@ -49,6 +50,7 @@ const sidebarNavItems: SidebarNavItem[] = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   return (
     <div className="flex min-h-screen flex-col space-y-6">
@@ -66,7 +68,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 >
                   <Link href={item.href}>
                     {Icon && <Icon className="mr-2 h-4 w-4" />}
-                    {item.title}
+                    {t(item.title)}
                   </Link>
                 </Button>
               );
