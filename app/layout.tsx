@@ -9,6 +9,7 @@ import SnackbarMessages from './components/ui/SnackbarMessage';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 
 import './global.css';
+import { LanguageProvider } from '@/components/ui/languageContext';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -47,14 +48,16 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
+            <LanguageProvider>
             {/* We pass the promise here and resolve it with react.use in the child to prevent the async request from blocking the UI */}
-            <NavBar session={getSession()} />
-            <main>{children}</main>
-            {modal}
-            <Footer />
-            <Suspense fallback={null}>
-              <SnackbarMessages />
-            </Suspense>
+              <NavBar session={getSession()} />
+              <main>{children}</main>
+              {modal}
+              <Footer />
+              <Suspense fallback={null}>
+                <SnackbarMessages />
+              </Suspense> 
+            </LanguageProvider>
           </ThemeProvider>
         </body>
       </RootErrorBoundary>

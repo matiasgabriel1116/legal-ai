@@ -1,32 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Button } from './button';
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { useLanguage } from './languageContext';
+import { Languages } from 'lucide-react';
 
 export function LanguageButtons() {
-  const [direction, setDirection] = useState('ltr');
+  const { language, setLanguage } = useLanguage();
 
-  useEffect(() => {
-    document.documentElement.dir = direction;
-    document.documentElement.lang = direction === 'ltr' ? 'en' : 'ar';
-  }, [direction]);
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'ar' : 'en');
+  };
 
   return (
-    <div className="flex gap-1">
-      <Button
-        variant={direction === 'ltr' ? 'secondary' : 'ghost'}
-        onClick={() => setDirection('ltr')}
-        size="sm"
-      >
-        En
-      </Button>
-      <Button
-        variant={direction === 'rtl' ? 'secondary' : 'ghost'}
-        onClick={() => setDirection('rtl')}
-        size="sm"
-      >
-        عر
-      </Button>
-    </div>
+    <Button variant="outline" size="icon" onClick={toggleLanguage} className="relative">
+      <Languages className="h-4 w-4" />
+      <span className="sr-only">Toggle language</span>
+      <span className="absolute -top-1 -right-1 text-xs">{language.toUpperCase()}</span>
+    </Button>
   );
 }
