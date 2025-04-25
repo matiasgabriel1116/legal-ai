@@ -61,7 +61,7 @@ function LinearProgressWithLabel({
       </div>
       <div className="flex items-center gap-1 ml-1 min-h-[20px]">
         <p className="text-sm text-muted-foreground font-medium flex items-center gap-1 transition-opacity duration-300">
-          {t(status)}
+          {t(status as any)}
           {shouldShowSpinner && (
             <Loader2 className="h-4 w-4 animate-spin text-primary" />
           )}

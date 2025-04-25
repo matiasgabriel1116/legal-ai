@@ -55,7 +55,7 @@ export default function SignInCard() {
 
       setAlertMessage({
         type: result.success ? 'success' : 'error',
-        message: t(result.message)
+        message: t(result.message as any)
       });
 
       if (result.success) {

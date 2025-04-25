@@ -68,7 +68,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 >
                   <Link href={item.href}>
                     {Icon && <Icon className="mr-2 h-4 w-4" />}
-                    {t(item.title)}
+                    {t(item.title as any)}
                   </Link>
                 </Button>
               );

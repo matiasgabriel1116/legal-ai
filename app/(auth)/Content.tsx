@@ -39,8 +39,8 @@ export default function Content() {
         <div key={index} className="flex gap-4">
           <div className="flex-shrink-0 mt-0.5">{item.icon}</div>
           <div>
-            <h3 className="font-medium mb-1.5">{t(item.title)}</h3>
-            <p className="text-sm text-muted-foreground">{t(item.description)}</p>
+            <h3 className="font-medium mb-1.5">{t(item.title as any)}</h3>
+            <p className="text-sm text-muted-foreground">{t(item.description as any)}</p>
           </div>
         </div>
       ))}
