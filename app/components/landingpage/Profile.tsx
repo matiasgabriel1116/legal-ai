@@ -5,8 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Linkedin, Github } from 'lucide-react';
 import ChikenImage from '@/public/images/chiken image.jpg';
+import { useLanguage } from '@/components/ui/languageContext';
 
 const UserProfileComponent = () => {
+  const { t } = useLanguage();
   return (
     <Card className="max-w-[1800px] mx-auto my-4 shadow-md">
       <CardContent className="p-6">
@@ -14,7 +16,7 @@ const UserProfileComponent = () => {
           <div className="flex flex-col items-center md:col-span-4">
             <Image
               src={ChikenImage}
-              alt="Support"
+              alt={t("Support")}
               height={140}
               width={140}
               className="rounded-full"

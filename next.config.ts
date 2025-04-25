@@ -5,9 +5,6 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // [AI OPTIMIZATION] Add these new experimental settings
-  serverComponentsExternalPackages: ['@xenova/transformers'],
-
   experimental: {
     staleTimes: {
       dynamic: 30,

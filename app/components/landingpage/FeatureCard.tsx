@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { useLanguage } from '@/components/ui/languageContext';
 
 const features = [
   {
@@ -56,16 +57,17 @@ const features = [
 ];
 
 export default function Component() {
+  const { t } = useLanguage()
   return (
     <div
       id="models"
       className="pt-1 sm:pt-2 md:pt-3 lg:pt-4 pb-1 sm:pb-2 md:pb-3 lg:pb-6 max-w-[1800px] mx-auto px-4"
     >
       <h2 className="text-center font-bold font-mono tracking-widest text-primary text-3xl mb-2">
-        Discover Our Features
+        {t('Discover Our Features')}
       </h2>
       <p className="font-bold text-center max-w-[800px] mx-auto font-mono tracking-wider mb-8 text-foreground/90">
-        Harnessing Advanced AI for Better Insights and Efficient Operations
+        {t('Harnessing Advanced AI for Better Insights and Efficient Operations')}
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">

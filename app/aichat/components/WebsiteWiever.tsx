@@ -10,6 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip';
+import { useLanguage } from '@/components/ui/languageContext';
 
 interface WebsiteViewerProps {
   url: string;
@@ -23,6 +24,8 @@ const WebsiteViewer: React.FC<WebsiteViewerProps> = ({ url }) => {
     return `/api/proxy-website?url=${encodeURIComponent(url)}`;
   };
   const pathname = usePathname();
+
+  const { t } = useLanguage();
 
   // Note: Not all websites can be proxied due to security restrictions.
   // If the website does some sort of POST request after render to get the data, it is not possible to proxy it with this technique.
@@ -46,7 +49,7 @@ const WebsiteViewer: React.FC<WebsiteViewerProps> = ({ url }) => {
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Close</p>
+              <p>{t('Close')}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

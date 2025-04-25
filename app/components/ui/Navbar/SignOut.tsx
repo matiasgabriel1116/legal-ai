@@ -3,6 +3,7 @@ import { signout } from '@/app/(auth)/action';
 import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Loader2, LogOut } from 'lucide-react';
+import { useLanguage } from '@/components/ui/languageContext';
 
 export default function SignOut() {
   return (
@@ -17,6 +18,8 @@ export default function SignOut() {
 function SubmitButton() {
   const { pending } = useFormStatus();
 
+  const { t } = useLanguage();
+
   return (
     <Button
       type="submit"
@@ -29,7 +32,7 @@ function SubmitButton() {
       ) : (
         <>
           <LogOut className="h-4 w-4 mr-2" />
-          Sign out
+          {t('Sign out')}
         </>
       )}
     </Button>

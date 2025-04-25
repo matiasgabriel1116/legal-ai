@@ -3,6 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { useLanguage } from '@/components/ui/languageContext';
 
 interface ModalWrapperProps {
   children: React.ReactNode;
@@ -11,9 +12,11 @@ interface ModalWrapperProps {
 export default function ModalWrapper({ children }: ModalWrapperProps) {
   const router = useRouter();
 
+  const { t } = useLanguage();
+
   return (
     <Dialog open onOpenChange={() => router.back()}>
-      <DialogTitle className="bg-background text-white">Sign in</DialogTitle>
+      <DialogTitle className="bg-background text-white">{t('Sign in')}</DialogTitle>
       <DialogContent
         className="max-h-[90vh] w-[95%] sm:max-w-[90%] md:max-w-[90%] lg:max-w-[1200px] 
         my-2 p-4 sm:p-6 md:p-6 

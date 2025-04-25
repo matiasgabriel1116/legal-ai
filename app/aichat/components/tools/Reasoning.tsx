@@ -6,6 +6,7 @@ import {
   AccordionItem,
   AccordionTrigger
 } from '@/components/ui/accordion';
+import { useLanguage } from '@/components/ui/languageContext';
 
 interface ReasoningContentProps {
   details: any[];
@@ -21,6 +22,8 @@ const ReasoningContent: React.FC<ReasoningContentProps> = ({
     ?.map((detail) => (detail.type === 'text' ? detail.text : '<redacted>'))
     .join('');
 
+  const { t } = useLanguage();
+
   return (
     <div className="mt-4 pt-2 border-t border-border/40">
       <Accordion
@@ -34,7 +37,7 @@ const ReasoningContent: React.FC<ReasoningContentProps> = ({
           className="bg-background/40 rounded-lg overflow-hidden border border-border shadow-sm"
         >
           <AccordionTrigger className="font-bold text-foreground/80 hover:text-foreground py-2 px-3 cursor-pointer">
-            Reasoning
+            {t('Reasoning')}
           </AccordionTrigger>
           <AccordionContent className="bg-muted/50 p-3 text-sm text-foreground/90 overflow-x-auto max-h-[300px] overflow-y-auto border-t border-border/40">
             <MemoizedMarkdown
