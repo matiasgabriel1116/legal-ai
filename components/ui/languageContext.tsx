@@ -164,6 +164,16 @@ export const translations = {
     'Admin Uploads': 'Admin Uploads',
     'User Uploads': 'User Uploads',
     'Document Uploads Over Time': 'Document Uploads Over Time',
+    'Supported formats: PDF, DOCX': 'Supported formats: PDF, DOCX',
+    'Max': 'Max',
+    'files': 'files',
+    'Uploading': 'Uploading',
+    'file': 'file',
+    'Upload': 'Upload',
+    'Initializing...': 'Initializing...',
+    'Uploading...': 'Uploading...',
+    'Analyzing...': 'Analyzing...',
+    'Saving to Database...': 'Saving to Database...',
   },
   ar: {
     'Sign in': 'تسجيل الدخول',
@@ -326,6 +336,16 @@ export const translations = {
     'Admin Uploads': 'تحميلات الإدارة',
     'User Uploads': 'تحميلات المستخدم',
     'Document Uploads Over Time': 'تحميل المستندات بمرور الوقت',
+    'Supported formats: PDF, DOCX': 'التنسيقات المدعومة: PDF، DOCX',
+    'Max': 'الأعلى',
+    'files': 'الملفات',
+    'Uploading': 'جاري التحميل',
+    'file': 'ملف',
+    'Upload': 'رفع',
+    'Initializing...': 'جاري التهيئة...',
+    'Uploading...': 'جاري التحميل...',
+    'Analyzing...': 'تحليل...',
+    'Saving to Database...': 'حفظ في قاعدة البيانات...',
   }
 };
 

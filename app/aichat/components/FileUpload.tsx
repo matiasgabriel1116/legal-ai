@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
+import { useLanguage } from '@/components/ui/languageContext';
 
 const SUPPORTED_FILE_TYPES: Record<string, string[]> = {
   'application/pdf': ['.pdf', '.PDF'],
@@ -33,6 +34,7 @@ function LinearProgressWithLabel({
   value: number;
   status: string;
 }) {
+  const { t } = useLanguage();
   const statusesWithSpinner = [
     'Initializing...',
     'Uploading...',
@@ -59,7 +61,7 @@ function LinearProgressWithLabel({
       </div>
       <div className="flex items-center gap-1 ml-1 min-h-[20px]">
         <p className="text-sm text-muted-foreground font-medium flex items-center gap-1 transition-opacity duration-300">
-          {status}
+          {t(status)}
           {shouldShowSpinner && (
             <Loader2 className="h-4 w-4 animate-spin text-primary" />
           )}
@@ -145,6 +147,8 @@ export default function ServerUploadPage() {
     multiple: true
   });
 
+  const { t } = useLanguage();
+
   return (
     <form
       className="max-w-[550px] mx-auto bg-background"
@@ -172,22 +176,21 @@ export default function ServerUploadPage() {
               className={`text-lg font-semibold mb-1 ${isDragActive ? 'text-primary' : 'text-foreground'
                 } transition-colors duration-200`}
             >
-              {isDragActive ? 'Drop files here...' : 'Drag files here'}
+              {isDragActive ? `${t('Drag files here')}...` : t('Drag files here')}
             </h6>
-            <p className="text-muted-foreground mb-0.5">Or</p>
+            <p className="text-muted-foreground mb-0.5">{t('Or')}</p>
             <Button
               variant="outline"
               className="text-foreground border-border px-3 hover:border-primary hover:bg-transparent"
               type="button"
             >
-              Browse
+              {t('Browse')}
             </Button>
             <p className="text-muted-foreground mt-1 text-sm">
-              Supported formats: PDF, DOCX (Max {MAX_TOTAL_FILES} files)
+              {t('Supported formats: PDF, DOCX')} ({t('Max')} {MAX_TOTAL_FILES} {t('files')})
             </p>
             <p className="text-muted-foreground/70 text-xs mt-0.5 italic">
-              Note that files with more than approximately 600 pages are not
-              currently supported.
+              {t('Note that files with more than approximately 600 pages are not currently supported.')}
             </p>
           </div>
         </div>
@@ -270,8 +273,8 @@ export default function ServerUploadPage() {
       >
         <CloudUploadIcon className="mr-2 h-5 w-5" />
         {isUploading
-          ? `Uploading ${selectedFiles?.length || 0} file${selectedFiles?.length !== 1 ? 's' : ''}...`
-          : `Upload ${selectedFiles?.length || 0} file${selectedFiles?.length !== 1 ? 's' : ''}`}
+          ? `${t('Uploading')} ${selectedFiles?.length || 0} ${t('file')}${selectedFiles?.length !== 1 ? 's' : ''}...`
+          : `${t('Upload')} ${selectedFiles?.length || 0} ${t('file')}${selectedFiles?.length !== 1 ? 's' : ''}`}
       </Button>
     </form>
   );
