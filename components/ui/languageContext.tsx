@@ -364,26 +364,63 @@ interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: TranslationKey) => string;
-  dir: string;
+  dir: string,
+  isReady: boolean;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>('en');
-  const dir = language === 'ar' ? 'rtl' : 'ltr';
+  const [state, setState] = useState<{
+    language: Language;
+    isReady: boolean;
+  }>({
+    language: 'en', // Default value (will be overwritten)
+    isReady: false, // Track initialization
+  });
+
+  const dir = state.language === 'ar' ? 'rtl' : 'ltr';
 
   useEffect(() => {
-    document.documentElement.dir = dir;
-    document.documentElement.lang = language;
-  }, [language, dir]);
+    // Client-side initialization
+    const savedLanguage = (localStorage.getItem('language') as Language) || 'en';
+    setState({
+      language: savedLanguage,
+      isReady: true,
+    });
+  }, []);
 
-  const t = (key: TranslationKey): string => {
-    return translations[language][key] || key;
+  useEffect(() => {
+    if (state.isReady) { // Only run after initialization
+      localStorage.setItem('language', state.language);
+      document.documentElement.dir = dir;
+      document.documentElement.lang = state.language;
+    }
+  }, [state.language, dir, state.isReady]);
+
+  const setLanguage = (lang: Language) => {
+    setState(prev => ({ ...prev, language: lang }));
   };
 
+  const t = (key: TranslationKey): string => {
+    return translations[state.language][key] || key;
+  };
+
+  // Don't render until language is initialized
+  if (!state.isReady) {
+    return null;
+  }
+
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, dir }}>
+    <LanguageContext.Provider 
+      value={{ 
+        language: state.language, 
+        setLanguage, 
+        t, 
+        dir,
+        isReady: state.isReady,
+      }}
+    >
       {children}
     </LanguageContext.Provider>
   );
