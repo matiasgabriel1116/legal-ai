@@ -108,6 +108,8 @@ async function getSelectedDocumentsMetadata(
   userId: string,
   selectedFiles: string[]
 ) {
+
+  // console.log("@@@ ###", selectedFiles)
   const supabase = await createServerSupabaseClient();
 
   try {
@@ -119,36 +121,66 @@ async function getSelectedDocumentsMetadata(
       .in('filter_tags', selectedFiles);
 
     if (userError) throw userError;
+    return userDocs;
 
-    // Fetch admin documents (from specific admin accounts)
-    const { data: adminDocs, error: adminError } = await supabase
-      .from('vector_documents')
-      .select('title, ai_title, ai_description, ai_maintopics, primary_language')
-      .in('user_id', [
-        '11f99276-9cc7-4345-a56a-06167b5ab69b', // prasxomeasxiom@gmail.com
-        'd735eeb2-2478-4cb5-b427-f3a3339493b6'  // leonardo202483@gmail.com
-      ])
+    // // Fetch admin documents (from specific admin accounts)
+    // const { data: adminDocs, error: adminError } = await supabase
+    //   .from('vector_documents')
+    //   .select('title, ai_title, ai_description, ai_maintopics, primary_language')
+    //   .in('user_id', [
+    //     '11f99276-9cc7-4345-a56a-06167b5ab69b', // prasxomeasxiom@gmail.com
+    //     'd735eeb2-2478-4cb5-b427-f3a3339493b6'  // leonardo202483@gmail.com
+    //   ])
 
-    if (adminError) throw adminError;
+    // if (adminError) throw adminError;
 
-    // Combine and return results
-    // console.log("#### userDocs => ", userDocs.length, userDocs)
+    // // Combine and return results
+    // // console.log("#### userDocs => ", userDocs.length, userDocs)
     // console.log("#### adminDocs => ", adminDocs.length, adminDocs)
     // console.log("#### allDocs => ", ([...(userDocs || []), ...(adminDocs || [])]).length)
-    return [...(userDocs || []), ...(adminDocs || [])];
+    // return [...(userDocs || []), ...(adminDocs || [])];
   } catch (error) {
     console.error('Error fetching document metadata:', error);
     return [];
   }
 }
 
+function truncatePrompt(prompt: string, maxTokens: number): string {
+  // Simple token estimation (4 chars ≈ 1 token)
+  const tokenCount = Math.ceil(prompt.length / 4);
+  
+  if (tokenCount <= maxTokens) return prompt;
+  
+  // Calculate truncation percentage needed
+  const ratio = maxTokens / tokenCount;
+  const newLength = Math.floor(prompt.length * ratio * 0.9); // 10% buffer
+  
+  // Smart truncation - try to preserve document structure
+  const lastDocumentIndex = prompt.lastIndexOf('<document>', newLength);
+  return prompt.substring(0, lastDocumentIndex > 0 ? lastDocumentIndex : newLength) + 
+    '\n\n[Some content was truncated to fit token limits]';
+}
+
+async function enhanced_selectedFiles(selectedFiles:String[]) {
+  // Add admin uploaded files
+  const supabase = await createServerSupabaseClient();
+  const {data: adminData, error:adminError} = await supabase
+  .from('vector_documents')
+  .select('title, timestamp')
+  
+  const new_selectedFiles = [...(selectedFiles || []), ...(adminData?.map(item => `${item.title}[[${item.timestamp}]]`) || [])]
+
+  // console.log("@@@ selectedFiles => ", selectedFiles)
+  // console.log("@@@ new_selectedFiles => ", new_selectedFiles)
+
+  return new_selectedFiles;
+}
+
 export const searchUserDocument = ({ userId, selectedFiles }: DocToolProps) =>
   tool({
-    description: `Search through ${
-      selectedFiles.length
-    } uploaded documents to find relevant information based on the query. ALWAYS use this tool when documents have been uploaded by the user. Currently selected documents: ${selectedFiles.join(
-      ', '
-    )}`,
+    description: `Search through uploaded documents to find relevant information based on the query. ALWAYS use this tool when documents are available. Currently selected documents: ${
+      selectedFiles.join(', ')
+    }`,
     parameters: z.object({
       query: z
         .string()
@@ -157,8 +189,11 @@ export const searchUserDocument = ({ userId, selectedFiles }: DocToolProps) =>
         )
     }),
     execute: async (args, { messages }) => {
+
+      const new_selectedFiles = await enhanced_selectedFiles(selectedFiles)
+
       // Sanitize filenames
-      const sanitizedFilenames = selectedFiles.map((filename) => {
+      const sanitizedFilenames = new_selectedFiles.map((filename) => {
         // Split the filename and timestamp
         const [name, timestamp] = filename.split('[[');
 
@@ -169,11 +204,29 @@ export const searchUserDocument = ({ userId, selectedFiles }: DocToolProps) =>
         return timestamp ? `${sanitizedName}[[${timestamp}` : sanitizedName;
       });
 
+      // console.log("@@@ sanitizedFilenames => ", sanitizedFilenames)
+
+      // Sanitize filenames
+      const original_sanitizedFilenames = selectedFiles.map((filename) => {
+        // Split the filename and timestamp
+        const [name, timestamp] = filename.split('[[');
+
+        // Sanitize only the filename part
+        const sanitizedName = sanitizeFilename(name);
+
+        // Reconstruct the filename with the original timestamp
+        return timestamp ? `${sanitizedName}[[${timestamp}` : sanitizedName;
+      });
+
+      // console.log("@@@ original_sanitizedFilenames => ", original_sanitizedFilenames)
+
       // Get document metadata
       const documentsMetadata = await getSelectedDocumentsMetadata(
         userId,
         sanitizedFilenames
       );
+
+      // console.log("@@@ documentsMetadata => ", documentsMetadata)
 
       const documentContext = documentsMetadata
         .map((doc) => {
@@ -191,6 +244,8 @@ export const searchUserDocument = ({ userId, selectedFiles }: DocToolProps) =>
           return parts.join('\n');
         })
         .join('\n\n');
+
+      // console.log("@@@ documentContext =>", documentContext)
 
       // Generate optimized queries
       const { object } = await generateObject({
@@ -215,12 +270,14 @@ Keep the variations focused on the content available in the provided documents.`
         object.variation3
       ].filter((q) => q && q.trim() !== '');
 
-      console.log('Optimized queries:', queries);
+      // console.log('Optimized queries:', queries);
 
       // Get embedding for each query
       const embeddings = await Promise.all(
         queries.map((query) => embedQuery(query))
       );
+
+      // console.log('@@@ embeddings:', embeddings);
 
       // Query for vector search results for each embedding
       const searchResultsArrays = await Promise.all(
@@ -228,6 +285,8 @@ Keep the variations focused on the content available in the provided documents.`
           querySupabaseVectors(embedding, userId, sanitizedFilenames, 40, 0.5)
         )
       );
+
+      // console.log("@@@ searchResultsArrays => ", searchResultsArrays)
 
       // Sort results by similarity
       const allSearchResults = searchResultsArrays.flat();
@@ -245,6 +304,8 @@ Keep the variations focused on the content available in the provided documents.`
       const sortedSearchResults = uniqueResults.sort(
         (a, b) => b.metadata.similarity - a.metadata.similarity
       );
+
+      // console.log('sortedSearchResults:', sortedSearchResults);
 
       // Format search results
       const formattedSearchResults = (() => {
@@ -333,7 +394,7 @@ Keep the variations focused on the content available in the provided documents.`
 
         return `
 <instructions>
-Based on the content in the search results extracted from the uploaded files, please provide an answer to the question. The search results contain information relevant to the query.
+Based on the content in the search results extracted from both user-selected and admin-uploaded files, please provide an answer to the question. The search results contain information relevant to the query from all available documents.
 
 IMPORTANT: Every time you use information from the documents, you must immediately add a reference after the relevant information. The reference MUST be in Markdown link format and include the document title and page number as a search parameter.
 
@@ -407,17 +468,17 @@ ${formattedSearchResults}
       // Prepare final system prompt
       const finalSystemPrompt =
         documentResults.length > 0
-          ? `I have found ${documentResults.length} relevant documents that match the user's query.
+          ? `I have found ${documentResults.length} relevant documents (from both user-selected and admin-uploaded files) that match the user's query.
 
 ${systemPromptTemplate}
 
 For each document relevant to the user's question, provide a clear and concise answer based on the document content, and include links to the documents in this format:
 ${exampleLinks}
 `
-          : `I could not find any documents matching the user's query.`;
+          : `I could not find any matching documents in either user-selected or admin-uploaded files.`;
 
       return {
-        systemPrompt: finalSystemPrompt
+        systemPrompt: truncatePrompt(finalSystemPrompt, 7000)
       };
     }
   });

@@ -22,7 +22,6 @@ export default async function ChatPage(props: PageProps) {
     <div
       style={{
         display: 'flex',
-        width: '100%',
         overflow: 'hidden'
       }}
     >
