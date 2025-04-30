@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Menu, ChevronDown } from 'lucide-react';
 import { type User } from '@supabase/supabase-js';
+import Image from "next/image";
 
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -61,9 +62,15 @@ const Header: React.FC<HeaderProps> = ({ session }) => {
       {/* Desktop navigation */}
       <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-xl border-b border-border h-12 hidden md:flex shadow-sm">
         <div className="flex items-center w-full h-full px-8 mx-auto">
-          <div className="flex items-center mr-8">
+          <div className="flex items-center  p-16 md:p-16 lg:p-24">
             <Link href="/" passHref>
-              <Sitemark />
+              <Image
+                src="/img/logo.jpg"
+                alt="Logo"
+                width={32}
+                height={32}
+              />
+              {/* <Sitemark /> */}
             </Link>
           </div>
 
@@ -72,11 +79,10 @@ const Header: React.FC<HeaderProps> = ({ session }) => {
               <Button
                 key={item.href}
                 variant={isActive(item.href) ? 'secondary' : 'ghost'}
-                className={`font-semibold text-base mx-1 rounded-md ${
-                  isActive(item.href)
-                    ? 'text-primary font-bold bg-primary/10'
-                    : 'text-foreground hover:bg-muted'
-                }`}
+                className={`font-semibold text-base mx-1 rounded-md ${isActive(item.href)
+                  ? 'text-primary font-bold bg-primary/10'
+                  : 'text-foreground hover:bg-muted'
+                  }`}
                 asChild
                 onMouseEnter={() => router.prefetch(item.href)}
               >
@@ -91,11 +97,10 @@ const Header: React.FC<HeaderProps> = ({ session }) => {
             ) : (
               <Button
                 variant={isActive('/signin') ? 'secondary' : 'ghost'}
-                className={`font-semibold text-base mx-1 rounded-md ${
-                  isActive('/signin')
-                    ? 'text-primary font-bold bg-primary/10'
-                    : 'text-foreground'
-                }`}
+                className={`font-semibold text-base mx-1 rounded-md ${isActive('/signin')
+                  ? 'text-primary font-bold bg-primary/10'
+                  : 'text-foreground'
+                  }`}
                 asChild
               >
                 <Link href="/signin" prefetch={false} data-translate={'Sign in'}>
@@ -145,11 +150,10 @@ const Header: React.FC<HeaderProps> = ({ session }) => {
                     <li>
                       <Link
                         href={item.href}
-                        className={`flex py-4 px-6 font-semibold text-lg ${
-                          isActive(item.href)
-                            ? 'bg-muted text-primary'
-                            : 'hover:bg-muted/50'
-                        }`}
+                        className={`flex py-4 px-6 font-semibold text-lg ${isActive(item.href)
+                          ? 'bg-muted text-primary'
+                          : 'hover:bg-muted/50'
+                          }`}
                         onClick={() => setSheetOpen(false)}
                         prefetch={false}
                       >
