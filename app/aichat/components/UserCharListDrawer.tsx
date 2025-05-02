@@ -280,7 +280,8 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      router.push('/aichat');
+                      router.push('/aichat', {scroll: false});
+                      router.refresh();
                       setIsOpen(false);
                     }}
                     className="h-8 w-8 text-primary"

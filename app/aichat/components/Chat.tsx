@@ -111,8 +111,6 @@ const ChatComponent: React.FC<ChatProps> = ({
     experimental_throttle: 50,
     initialMessages: currentChat?.chat_messages,
     onFinish: async () => {
-      console.log("ERERERERERERE");
-      
       if (chatId === currentChatId) return;
       const existingParams = searchParams.toString();
       const newUrl = `${pathname}/${chatId}${
