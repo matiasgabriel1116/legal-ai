@@ -21,7 +21,9 @@ const SUPPORTED_FILE_TYPES: Record<string, string[]> = {
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [
     '.docx',
     '.DOCX'
-  ]
+  ],
+  'image/jpeg': ['.jpg', '.jpeg', '.JPG', '.JPEG'],
+  'image/png': ['.png', '.PNG']
 };
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB in bytes
@@ -151,104 +153,99 @@ export default function ServerUploadPage() {
 
   return (
     <form
-      className="max-w-[550px] mx-auto bg-background"
+      className="w-full bg-background"
       onSubmit={handleSubmit}
       ref={formRef}
     >
-      <div
-        style={{ maxHeight: '250px', overflow: 'scroll' }}>
+      <div>
         <div
           {...getRootProps()}
-          className={`min-h-[50px] border-2 border-dashed ${isDragActive
-            ? 'border-primary bg-primary/5'
-            : 'border-border hover:border-primary hover:bg-primary/5'
-            } rounded-lg flex items-center justify-center text-center cursor-pointer p-4 mb-4 transition-all duration-200`}
+          className={`min-h-[40px] border border-dashed ${
+            isDragActive
+              ? 'border-primary bg-primary/5'
+              : 'border-border hover:border-primary hover:bg-primary/5'
+          } rounded-lg flex items-center justify-center text-center cursor-pointer p-2 mb-2 transition-all duration-200`}
         >
           <input {...getInputProps()} />
-          <div>
-            <div className="flex justify-center">
-              <CloudUploadIcon
-                className={`w-9 h-9 ${isDragActive ? 'text-primary' : 'text-foreground'
-                  } transition-colors duration-200`}
-              />
+          <div className="flex flex-col items-center gap-1">
+            <CloudUploadIcon
+              className={`w-5 h-5 ${
+                isDragActive ? 'text-primary' : 'text-foreground'
+              } transition-colors duration-200`}
+            />
+            <div className="text-xs text-muted-foreground">
+              {t('Drag files here')} {t('Or')} 
+              <Button
+                variant="link"
+                className="text-xs text-primary p-0 h-auto font-normal hover:text-primary/80 ml-1"
+                type="button"
+              >
+                {t('Browse')}
+              </Button>
             </div>
-            <h6
-              className={`text-lg font-semibold mb-1 ${isDragActive ? 'text-primary' : 'text-foreground'
-                } transition-colors duration-200`}
-            >
-              {isDragActive ? `${t('Drag files here')}...` : t('Drag files here')}
-            </h6>
-            <p className="text-muted-foreground mb-0.5">{t('Or')}</p>
-            <Button
-              variant="outline"
-              className="text-foreground border-border px-3 hover:border-primary hover:bg-transparent"
-              type="button"
-            >
-              {t('Browse')}
-            </Button>
-            <p className="text-muted-foreground mt-1 text-sm">
-              {t('Supported formats: PDF, DOCX')} ({t('Max')} {MAX_TOTAL_FILES} {t('files')})
-            </p>
-            <p className="text-muted-foreground/70 text-xs mt-0.5 italic">
-              {t('Note that files with more than approximately 600 pages are not currently supported.')}
-            </p>
+            <div className="text-[10px] text-muted-foreground/80">
+              PDF, DOCX, JPG, PNG ({t('Max')} {MAX_TOTAL_FILES})
+            </div>
           </div>
         </div>
-        <AnimatePresence>
-          {selectedFiles && selectedFiles.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-2 mb-4"
-            >
-              {selectedFiles.map((file, index) => (
-                <motion.div
-                  key={`${file.name}-${index}`}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.2 }}
-                  layout
-                >
-                  <Card className="bg-card/50 p-4 rounded-lg shadow-none">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">
-                          <DescriptionIcon className="h-5 w-5" />
+
+        <div className="relative">
+          <AnimatePresence mode="popLayout">
+            {selectedFiles && selectedFiles.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-1 mb-2"
+              >
+                {selectedFiles.map((file, index) => (
+                  <motion.div
+                    key={`${file.name}-${index}`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    layout="position"
+                  >
+                    <Card className="bg-card/50 p-2 rounded-md shadow-none">
+                      <div className="flex justify-between items-center gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="flex-shrink-0 w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center text-primary">
+                            <DescriptionIcon className="h-3 w-3" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium text-foreground truncate leading-tight">
+                              {file.name}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {(file.size / (1024 * 1024)).toFixed(2)} MB
+                            </p>
+                          </div>
                         </div>
-                        <div className="min-w-0 max-w-[80%]">
-                          <p className="text-foreground font-medium overflow-hidden line-clamp-2 break-words leading-tight mb-0.5">
-                            {file.name}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {(file.size / (1024 * 1024)).toFixed(2)} MB
-                          </p>
-                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveFile(index);
+                          }}
+                          disabled={isUploading}
+                          className="text-foreground hover:text-primary flex-shrink-0 h-6 w-6 p-0"
+                        >
+                          <CloseIcon className="h-3 w-3" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveFile(index);
-                        }}
-                        disabled={isUploading}
-                        className="text-foreground hover:text-primary"
-                      >
-                        <CloseIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </Card>
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+                    </Card>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {selectedFiles && selectedFiles.length > 0 && (
-          <div className="mt-2">
+          <div className="mt-1 sticky bottom-0 bg-background pt-1">
             <LinearProgressWithLabel
               value={uploadProgress}
               status={uploadStatus}
@@ -256,7 +253,7 @@ export default function ServerUploadPage() {
             {uploadStatus && statusSeverity !== 'info' && (
               <Alert
                 variant={statusSeverity === 'error' ? 'destructive' : 'default'}
-                className="mt-1 rounded-lg"
+                className="mt-1 rounded-md text-xs p-2"
               >
                 <AlertDescription>{uploadStatus}</AlertDescription>
               </Alert>
@@ -265,13 +262,12 @@ export default function ServerUploadPage() {
         )}
       </div>
 
-
       <Button
         type="submit"
         disabled={isUploading || !selectedFiles || selectedFiles.length === 0}
-        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base font-semibold rounded-lg py-2 disabled:opacity-50"
+        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium rounded-md h-8 disabled:opacity-50 mt-2"
       >
-        <CloudUploadIcon className="mr-2 h-5 w-5" />
+        <CloudUploadIcon className="mr-1 h-3 w-3" />
         {isUploading
           ? `${t('Uploading')} ${selectedFiles?.length || 0} ${t('file')}${selectedFiles?.length !== 1 ? 's' : ''}...`
           : `${t('Upload')} ${selectedFiles?.length || 0} ${t('file')}${selectedFiles?.length !== 1 ? 's' : ''}`}

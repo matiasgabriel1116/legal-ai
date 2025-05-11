@@ -130,216 +130,220 @@ const ChatComponent: React.FC<ChatProps> = ({
   const { t } = useLanguage();
 
   return (
-    <div className="flex flex-col h-screen md:h-[calc(100vh-48px)] w-full mx-auto">
-      {messages.length === 0 ? (
-        <div className="flex flex-col justify-center items-center h-[90vh] text-center ltr:px-4 rtl:px-4">
-          <h2 className="text-2xl font-semibold text-foreground/80 pb-2">
-            {t('Chat with our AI Assistant')}
-          </h2>
+    <div className="flex flex-col h-screen w-full">
+      <div className="flex-1 overflow-hidden">
+        <div className="max-w-3xl mx-auto px-4 w-full h-full relative">
+          {messages.length === 0 ? (
+            <div className="flex flex-col justify-center items-center h-[80vh] text-center">
+              <h2 className="text-2xl font-semibold text-foreground/80 pb-2">
+                {t('Chat with our AI Assistant')}
+              </h2>
 
-          <p className="text-muted-foreground pb-2 max-w-2xl">
-            {t('Experience the power of AI-driven conversations with our chat template. Ask questions on any topic and get informative responses instantly.')}
-          </p>
-          <h2 className="text-2xl font-semibold text-foreground/80">
-            {t('Start chatting now and enjoy the AI experience!')}
-          </h2>
-        </div>
-      ) : (
-        <div className="flex-1 overflow-y-auto">
-          <ul className="flex-1 overflow-y-auto w-full mx-auto max-w-[1000px] px-0 md:px-1 lg:px-4">
-            {messages.map((message, index) => {
-              const isUserMessage = message.role === 'user';
-              const copyToClipboard = (str: string) => {
-                window.navigator.clipboard.writeText(str);
-              };
-              const handleCopy = (content: string) => {
-                copyToClipboard(content);
-                setIsCopied(true);
-                setTimeout(() => setIsCopied(false), 1000);
-              };
-
-              // First filter the tool invocation parts to check if we need the accordion
-              const toolInvocationParts = !isUserMessage
-                ? message.parts?.filter(
-                    (part) => part.type === 'tool-invocation'
-                  ) || []
-                : [];
-
-              const hasToolInvocations = toolInvocationParts.length > 0;
-
-              return (
-                <li
-                  key={`${message.id}-${index}`}
-                  className={`relative flex flex-col items-start m-2 rounded-lg shadow-md p-4 break-words ${
-                    isUserMessage
-                      ? 'bg-primary/10 text-foreground dark:bg-primary/20'
-                      : 'bg-card text-card-foreground'
-                  }`}
-                >
-                  <div className="absolute top-2 left-2">
-                    {isUserMessage ? (
-                      <User className="text-primary" size={20} />
-                    ) : (
-                      <Bot className="text-muted-foreground" size={20} />
-                    )}
-                  </div>
-
-                  {!isUserMessage && (
-                    <button
-                      className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                      onClick={() => handleCopy(message.content)}
-                    >
-                      {isCopied ? (
-                        <CheckCircle size={18} />
-                      ) : (
-                        <Copy size={18} />
-                      )}
-                    </button>
-                  )}
-
-                  <div className="w-full pt-6">
-                    {/* Use the switch statement pattern to render different part types */}
-                    {message.parts?.map((part, partIndex) => {
-                      switch (part.type) {
-                        case 'text':
-                          return (
-                            <MemoizedMarkdown
-                              key={`text-${partIndex}`}
-                              content={part.text}
-                              id={`${
-                                isUserMessage ? 'user' : 'assistant'
-                              }-text-${message.id}-${partIndex}`}
-                            />
-                          );
-
-                        case 'reasoning':
-                          return !isUserMessage ? (
-                            <ReasoningContent
-                              key={`reasoning-${partIndex}`}
-                              details={part.details}
-                              messageId={message.id}
-                            />
-                          ) : null;
-
-                        case 'source':
-                          return !isUserMessage ? (
-                            <SourceView
-                              key={`source-${partIndex}`}
-                              source={part.source}
-                            />
-                          ) : null;
-
-                        case 'tool-invocation':
-                          // Don't render individual tools here - they'll be rendered in the accordion
-                          return null;
-
-                        default:
-                          return null;
-                      }
-                    })}
-
-                    {/* Render all tool invocations in a single accordion, outside the switch */}
-                    {hasToolInvocations && (
-                      <div className="mt-4 pt-2 border-t border-border/40">
-                        <Accordion
-                          type="single"
-                          defaultValue="tool-invocation"
-                          collapsible
-                          className="w-full"
-                        >
-                          <AccordionItem
-                            value="tool-invocation"
-                            className="bg-background/40 rounded-lg overflow-hidden border border-border shadow-sm"
-                          >
-                            <AccordionTrigger className="font-bold text-foreground/80 hover:text-foreground py-2 px-3 cursor-pointer">
-                              Tools
-                            </AccordionTrigger>
-                            <AccordionContent className="bg-muted/50 p-3 text-sm text-foreground/90 overflow-x-auto max-h-[300px] overflow-y-auto border-t border-border/40">
-                              {toolInvocationParts.map((part) => {
-                                const toolName = part.toolInvocation.toolName;
-                                const toolId = part.toolInvocation.toolCallId;
-                                switch (toolName) {
-                                  case 'searchUserDocument':
-                                    return (
-                                      <DocumentSearchTool
-                                        key={toolId}
-                                        toolInvocation={part.toolInvocation}
-                                      />
-                                    );
-                                  default:
-                                    return null;
-                                }
-                              })}
-                            </AccordionContent>
-                          </AccordionItem>
-                        </Accordion>
-                      </div>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-            <ChatScrollAnchor trackVisibility />
-          </ul>
-        </div>
-      )}
-
-      <div className="sticky bottom-0 mt-auto pb-2 max-w-[800px] mx-auto w-full">
-        <Card className="bg-gradient-to-r from-background/50 to-muted rounded-2xl w-full border-border shadow-md py-1">
-          <CardContent className="px-1">
-            <MessageInput
-              chatId={chatId}
-              apiEndpoint={apiEndpoint}
-              option={optimisticOption}
-              messagesLength={messages.length}
-            />
-
-            <div className="flex justify-between items-center mt-2 px-1 py-1 gap-2">
-              {/* Model Type Select */}
-              <div className="flex-1 max-w-[180px] text-right">
-                <p>{t('Select model:')}</p>
-              </div>
-              <div className="flex-1 ml-2">
-                <DropdownMenu
-                  open={dropdownOpen}
-                  onOpenChange={setDropdownOpen}
-                >
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full rounded-lg bg-background/80 hover:bg-background hover:shadow-sm justify-between px-4 py-2 text-sm border-border transition-all duration-200"
-                    >
-                      <span className="truncate">{optimisticOption}</span>
-                      <ChevronDown className="h-4 w-4 ml-2 flex-shrink-0 opacity-70" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56 rounded-lg shadow-lg border-border bg-popover/95 backdrop-blur-sm">
-                    {[
-                      'gpt-3.5-turbo-1106',
-                      'gpt-3.5-turbo-16k',
-                      'gpt-4-0125-preview',
-                      'gpt-4-1106-preview',
-                      'gpt-4',
-                      'sonnet-3-7'
-                    ].map((option) => (
-                      <DropdownMenuItem
-                        key={option}
-                        onClick={() => handleOptionChange(option)}
-                        className={`rounded-md my-0.5 transition-colors duration-200 ${
-                          optimisticOption === option
-                            ? 'bg-primary/20 text-primary font-medium'
-                            : 'hover:bg-muted'
-                        }`}
-                      >
-                        {option}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+              <p className="text-muted-foreground pb-2 max-w-2xl text-center">
+                {t('Experience the power of AI-driven conversations with our chat template. Ask questions on any topic and get informative responses instantly.')}
+              </p>
+              <h2 className="text-2xl font-semibold text-foreground/80">
+                {t('Start chatting now and enjoy the AI experience!')}
+              </h2>
             </div>
-          </CardContent>
-        </Card>
+          ) : (
+            <ul className="flex-1 w-full py-4 overflow-y-auto">
+              {messages.map((message, index) => {
+                const isUserMessage = message.role === 'user';
+                const copyToClipboard = (str: string) => {
+                  window.navigator.clipboard.writeText(str);
+                };
+                const handleCopy = (content: string) => {
+                  copyToClipboard(content);
+                  setIsCopied(true);
+                  setTimeout(() => setIsCopied(false), 1000);
+                };
+
+                // First filter the tool invocation parts to check if we need the accordion
+                const toolInvocationParts = !isUserMessage
+                  ? message.parts?.filter(
+                      (part) => part.type === 'tool-invocation'
+                    ) || []
+                  : [];
+
+                const hasToolInvocations = toolInvocationParts.length > 0;
+
+                return (
+                  <li
+                    key={`${message.id}-${index}`}
+                    className={`relative flex flex-col m-2 rounded-lg shadow-md p-4 break-words ${
+                      isUserMessage
+                        ? 'bg-primary/10 text-foreground dark:bg-primary/20 self-start'
+                        : 'bg-neutral-100 text-foreground self-end'
+                    }`}
+                  >
+                    <div className={`absolute top-2 ${isUserMessage ? 'left-2' : 'right-2'}`}>
+                      {isUserMessage ? (
+                        <User className="text-primary" size={20} />
+                      ) : (
+                        <Bot className="text-muted-foreground" size={20} />
+                      )}
+                    </div>
+
+                    {!isUserMessage && (
+                      <button
+                        className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                        onClick={() => handleCopy(message.content)}
+                      >
+                        {isCopied ? (
+                          <CheckCircle size={18} />
+                        ) : (
+                          <Copy size={18} />
+                        )}
+                      </button>
+                    )}
+
+                    <div className="w-full pt-6">
+                      {/* Use the switch statement pattern to render different part types */}
+                      {message.parts?.map((part, partIndex) => {
+                        switch (part.type) {
+                          case 'text':
+                            return (
+                              <MemoizedMarkdown
+                                key={`text-${partIndex}`}
+                                content={part.text}
+                                id={`${
+                                  isUserMessage ? 'user' : 'assistant'
+                                }-text-${message.id}-${partIndex}`}
+                              />
+                            );
+
+                          case 'reasoning':
+                            return !isUserMessage ? (
+                              <ReasoningContent
+                                key={`reasoning-${partIndex}`}
+                                details={part.details}
+                                messageId={message.id}
+                              />
+                            ) : null;
+
+                          case 'source':
+                            return !isUserMessage ? (
+                              <SourceView
+                                key={`source-${partIndex}`}
+                                source={part.source}
+                              />
+                            ) : null;
+
+                          case 'tool-invocation':
+                            // Don't render individual tools here - they'll be rendered in the accordion
+                            return null;
+
+                          default:
+                            return null;
+                        }
+                      })}
+
+                      {/* Render all tool invocations in a single accordion, outside the switch */}
+                      {hasToolInvocations && (
+                        <div className="mt-4 pt-2 border-t border-border/40">
+                          <Accordion
+                            type="single"
+                            defaultValue="tool-invocation"
+                            collapsible
+                            className="w-full"
+                          >
+                            <AccordionItem
+                              value="tool-invocation"
+                              className="bg-background/40 rounded-lg overflow-hidden border border-border shadow-sm"
+                            >
+                              <AccordionTrigger className="font-bold text-foreground/80 hover:text-foreground py-2 px-3 cursor-pointer">
+                                Tools
+                              </AccordionTrigger>
+                              <AccordionContent className="bg-muted/50 p-3 text-sm text-foreground/90 overflow-x-auto max-h-[300px] overflow-y-auto border-t border-border/40">
+                                {toolInvocationParts.map((part) => {
+                                  const toolName = part.toolInvocation.toolName;
+                                  const toolId = part.toolInvocation.toolCallId;
+                                  switch (toolName) {
+                                    case 'searchUserDocument':
+                                      return (
+                                        <DocumentSearchTool
+                                          key={toolId}
+                                          toolInvocation={part.toolInvocation}
+                                        />
+                                      );
+                                    default:
+                                      return null;
+                                  }
+                                })}
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+              <ChatScrollAnchor trackVisibility />
+            </ul>
+          )}
+        </div>
+      </div>
+
+      <div className="sticky bottom-0 bg-gradient-to-t from-background to-background/0 pb-4 pt-2">
+        <div className="max-w-3xl mx-auto px-4 w-full">
+          <Card className="bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 rounded-2xl w-full border-border shadow-md py-1">
+            <CardContent className="px-1">
+              <MessageInput
+                chatId={chatId}
+                apiEndpoint={apiEndpoint}
+                option={optimisticOption}
+                messagesLength={messages.length}
+              />
+
+              <div className="flex justify-between items-center mt-2 px-1 py-1 gap-2">
+                {/* Model Type Select */}
+                <div className="flex-1 max-w-[180px] text-right">
+                  <p>{t('Select model:')}</p>
+                </div>
+                <div className="flex-1 ml-2">
+                  <DropdownMenu
+                    open={dropdownOpen}
+                    onOpenChange={setDropdownOpen}
+                  >
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full rounded-lg bg-background/80 hover:bg-background hover:shadow-sm justify-between px-4 py-2 text-sm border-border transition-all duration-200"
+                      >
+                        <span className="truncate">{optimisticOption}</span>
+                        <ChevronDown className="h-4 w-4 ml-2 flex-shrink-0 opacity-70" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56 rounded-lg shadow-lg border-border bg-popover/95 backdrop-blur-sm">
+                      {[
+                        'gpt-3.5-turbo-1106',
+                        'gpt-3.5-turbo-16k',
+                        'gpt-4-0125-preview',
+                        'gpt-4-1106-preview',
+                        'gpt-4',
+                        'sonnet-3-7'
+                      ].map((option) => (
+                        <DropdownMenuItem
+                          key={option}
+                          onClick={() => handleOptionChange(option)}
+                          className={`rounded-md my-0.5 transition-colors duration-200 cursor-pointer ${
+                            optimisticOption === option
+                              ? 'bg-primary/20 text-primary font-medium'
+                              : 'hover:bg-primary/10'
+                          }`}
+                        >
+                          {option}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

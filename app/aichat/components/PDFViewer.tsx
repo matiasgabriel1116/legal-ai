@@ -42,8 +42,18 @@ const fetcher = async (
     }
 
     return data.signedUrl;
-  }
+  } else if (['jpg', 'jpeg', 'png'].includes(fileExtension)) {
+    const { data, error } = await supabase.storage
+      .from('userfiles')
+      .createSignedUrl(filePath, 300);
 
+    if (error) {
+      console.error('Error creating signed URL:', error);
+      return null;
+    }
+
+    return data.signedUrl;
+  }
   throw new Error('Unsupported file type');
 };
 
@@ -122,21 +132,26 @@ export default function DocumentViewer({
 
   const isPdf = fileExtension === 'pdf';
   const isOfficeDocument = ['doc', 'docx'].includes(fileExtension);
+  const isImage = ['jpg', 'jpeg', 'png'].includes(fileExtension);
   const iframeId = `document-viewer-${fileName.replace(/[^a-zA-Z0-9]/g, '-')}`;
 
   return (
-    <div className="w-[55%] border-l border-border hidden sm:flex flex-row justify-center items-start overflow-hidden relative h-[96vh]">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={handleClose}
-        className="absolute right-1 top-1 z-50 bg-background/70 hover:bg-background/90"
-      >
-        <X className="h-4 w-4" />
-      </Button>
+    <div className="w-[45%] border-l border-border hidden lg:flex flex-col overflow-hidden h-screen bg-background">
+      <div className="flex items-center justify-between p-2 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <h3 className="text-sm font-medium text-foreground truncate px-2">
+          {decodedFileName}
+        </h3>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleClose}
+          className="h-8 w-8 flex-shrink-0"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
 
-      {/* Add a theme-aware overlay for PDF frames in dark mode */}
-      <div className="relative w-full h-full">
+      <div className="flex-1 relative w-full overflow-hidden">
         {isPdf && (
           <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-background/40 to-transparent h-10 z-10 dark:from-background/60" />
         )}
@@ -162,10 +177,20 @@ export default function DocumentViewer({
             referrerPolicy="no-referrer"
             aria-label={`Office document: ${decodedFileName}`}
           />
+        ) : isImage ? (
+          <div className="w-full h-full flex items-center justify-center p-4 bg-muted/30">
+            <img
+              src={fileUrl}
+              alt={decodedFileName}
+              className="max-w-full max-h-full object-contain"
+            />
+          </div>
         ) : (
-          <p className="text-foreground text-base">
-            This file is not supported.
-          </p>
+          <div className="flex items-center justify-center h-full">
+            <p className="text-foreground text-base">
+              This file type is not supported.
+            </p>
+          </div>
         )}
       </div>
     </div>

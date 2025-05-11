@@ -131,14 +131,16 @@ export default async function Layout(props: { children: React.ReactNode }) {
   }
 
   return (
-    <div style={{ display: 'flex' }}>
+    <div style={{ display: 'flex', overflow: 'hidden' }}>
       <UploadProvider userId={userInfo.id}>
         <ChatHistoryDrawer
           userInfo={userInfo}
           initialChatPreviews={initialChatPreviews}
           categorizedChats={categorizedChats}
         />
-        {props.children}
+        <div style={{ flex: 1 }}>
+          {props.children}
+        </div>
       </UploadProvider>
     </div>
   );

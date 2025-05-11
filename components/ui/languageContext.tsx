@@ -164,7 +164,7 @@ export const translations = {
     'Admin Uploads': 'Admin Uploads',
     'User Uploads': 'User Uploads',
     'Document Uploads Over Time': 'Document Uploads Over Time',
-    'Supported formats: PDF, DOCX': 'Supported formats: PDF, DOCX',
+    'Supported formats: PDF, DOCX, JPG, PNG': 'Supported formats: PDF, DOCX, JPG, PNG',
     'Max': 'Max',
     'files': 'files',
     'Uploading': 'Uploading',

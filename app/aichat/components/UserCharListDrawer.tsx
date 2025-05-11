@@ -11,7 +11,7 @@ import React, {
 import {
   deleteChatData,
   fetchMoreChatPreviews,
-  deleteFilterTagAndDocumentChunks,
+  // deleteFilterTagAndDocumentChunks,
   updateChatTitle
 } from '../actions';
 import { format } from 'date-fns';
@@ -25,11 +25,11 @@ import {
   usePathname
 } from 'next/navigation';
 import { useUpload } from '../context/uploadContext';
-import ServerUploadPage from './FileUpload';
 import { createClient } from '@/lib/client/client';
 import { decodeBase64, encodeBase64 } from '../lib/base64';
 import useSWRImmutable from 'swr/immutable';
 import { useFormStatus } from 'react-dom';
+import RenderFilesSection from './RenderFilesSection';
 
 // Lucide Icons
 import {
@@ -47,7 +47,6 @@ import {
 // shadcn/ui components
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
@@ -70,7 +69,6 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useLanguage } from '@/components/ui/languageContext';
 
 type UserInfo = Pick<Tables<'users'>, 'full_name' | 'email' | 'id'>;
@@ -212,6 +210,7 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
   );
 
   const sortedUserFiles = useMemo(() => {
+    console.log(userFiles);
     return [...userFiles].sort(
       (a, b) =>
         new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
@@ -219,6 +218,14 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
   }, [userFiles]);
 
   const { t } = useLanguage();
+
+  const handleTabChange = (mode: 'chat' | 'files') => {
+    setActiveMode(mode);
+    if (mode === 'files') {
+      // Trigger file loading if needed
+      mutateFiles();
+    }
+  };
 
   // Desktop sidebar content
   const SidebarContent = (
@@ -236,44 +243,49 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
       ) : (
         <>
           {/* Header with toggle buttons */}
-          <div className="flex items-center justify-between w-full p-2 gap-2 border-b border-border">
+          <div className="flex items-center justify-between w-full px-4 py-3 border-b border-border/40 bg-background/50 backdrop-blur-sm">
             <div className="flex items-center gap-2">
-              <TooltipProvider>
+              <TooltipProvider delayDuration={300}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant={activeMode === 'chat' ? 'default' : 'ghost'}
                       size="sm"
                       onClick={() => setActiveMode('chat')}
-                      className="h-8 text-sm"
+                      className="h-8 text-sm cursor-pointer"
                     >
-                      <MessageSquare className="h-4 w-4 mr-1" />
+                      <MessageSquare className="h-4 w-4 mr-2" />
                       {t('Chats')}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>{t('View chat history')}</TooltipContent>
+                  <TooltipContent side="bottom">{t('View chat history')}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
 
-              <TooltipProvider>
+              <TooltipProvider delayDuration={300}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant={activeMode === 'files' ? 'default' : 'ghost'}
                       size="sm"
-                      onClick={() => setActiveMode('files')}
-                      className="h-8 text-sm"
+                      onClick={() => {
+                        handleTabChange('files')}
+                      }
+                      className="h-8 text-sm cursor-pointer"
                     >
-                      <FileText className="h-4 w-4 mr-1" />
+                      <FileText className="h-4 w-4 mr-2" />
                       {t('Files')}
+                      {activeMode === 'files' && (
+                        <span className="-bottom-3 left-0 right-0 h-0.5 bg-primary rounded-full" />
+                      )}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>{t('View uploaded files')}</TooltipContent>
+                  <TooltipContent side="bottom">{t('View uploaded files')}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
 
-            <TooltipProvider>
+            <TooltipProvider delayDuration={300}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -284,123 +296,37 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
                       router.refresh();
                       setIsOpen(false);
                     }}
-                    className="h-8 w-8 text-primary"
+                    className="h-8 w-8 text-primary hover:text-primary/80 hover:bg-primary/10 transition-colors"
                   >
                     <FilePlus className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>{t('Create a new conversation')}</TooltipContent>
+                <TooltipContent side="bottom">{t('Create a new conversation')}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
 
           {activeMode === 'files' ? (
-            <div className="flex flex-col h-[calc(100vh-98px)]">
-              <ScrollArea className="flex-1">
-                {isLoadingFiles ? (
-                  <div className="flex justify-center p-4">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  </div>
-                ) : (
-                  <ul className="space-y-0 mt-1">
-                    {sortedUserFiles.map((file, index) => {
-                      const formattedDate = format(
-                        new Date(file.updated_at),
-                        'yyyy-MM-dd'
-                      );
-                      const filterTag = `${file.name}[[${formattedDate}]]`;
-                      const isSelected = selectedBlobs.includes(filterTag);
-
-                      // Get current PDF from URL parameters
-                      const currentPdfParam = searchParams.get('pdf');
-                      const currentPdf = currentPdfParam
-                        ? decodeBase64(decodeURIComponent(currentPdfParam))
-                        : null;
-                      const isCurrentFile = currentPdf === file.name;
-
-                      const currentParams = new URLSearchParams(
-                        searchParams.toString()
-                      );
-                      currentParams.set(
-                        'pdf',
-                        encodeURIComponent(encodeBase64(file.name))
-                      );
-                      currentParams.delete('url');
-                      const href = `${pathname}?${currentParams.toString()}`;
-
-                      return (
-                        <li key={index} className="border-b border-border/30">
-                          <div className="grid grid-cols-[1fr,70px] w-full">
-                            <Link
-                              href={href}
-                              className={`p-2 overflow-hidden hover:bg-muted/60 ${
-                                isCurrentFile ? 'bg-muted/80' : ''
-                              }`}
-                              onClick={() => {
-                                if (window.innerWidth < 600) {
-                                  setIsOpen(false);
-                                }
-                              }}
-                            >
-                              <div className="overflow-hidden">
-                                <p className="text-sm font-medium truncate text-foreground">
-                                  {file.name.replace(/_/g, ' ')}
-                                </p>
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {format(new Date(file.updated_at), 'PPP')}
-                                </p>
-                              </div>
-                            </Link>
-                            <div className="flex items-center justify-end pr-2 w-[70px]">
-                              <Checkbox
-                                checked={isSelected}
-                                onCheckedChange={() => {
-                                  const newFilterTag = `${file.name}[[${formattedDate}]]`;
-                                  if (selectedBlobs.includes(newFilterTag)) {
-                                    setSelectedBlobs(
-                                      selectedBlobs.filter(
-                                        (blob) => blob !== newFilterTag
-                                      )
-                                    );
-                                  } else {
-                                    setSelectedBlobs([
-                                      ...selectedBlobs,
-                                      newFilterTag
-                                    ]);
-                                  }
-                                }}
-                                className="mr-1"
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                              <form
-                                action={async (formData: FormData) => {
-                                  formData.append(
-                                    'filePath',
-                                    encodeBase64(file.name)
-                                  );
-                                  formData.append('filterTag', filterTag);
-                                  await deleteFilterTagAndDocumentChunks(
-                                    formData
-                                  );
-                                  await mutateFiles();
-                                }}
-                              >
-                                <SubmitButton />
-                              </form>
-                            </div>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </ScrollArea>
-              <div className="border-t border-border p-2 mt-auto bg-card">
-                <ServerUploadPage />
-              </div>
+            <div className="flex-1 overflow-y-auto">
+              {isLoadingFiles ? (
+                <div className="flex justify-center p-4">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <RenderFilesSection
+                  title={t('Files')}
+                  files={sortedUserFiles}
+                  onFileSelect={() => {
+                    if (window.innerWidth < 600) {
+                      setIsOpen(false);
+                    }
+                  }}
+                  onMutate={mutateFiles}
+                />
+              )}
             </div>
           ) : (
-            <div className="overflow-auto flex-1">
+            <div className="flex-1 overflow-y-auto">
               {!chatPreviews ? (
                 <div className="space-y-2 p-2">
                   {Array.from({ length: 5 }).map((_, index) => (
@@ -483,12 +409,12 @@ const CombinedDrawer: FC<CombinedDrawerProps> = ({
   return (
     <>
       {/* Desktop sidebar */}
-      <div className="hidden md:flex inset-y-0 ltr:left-0 rtl:right-0 z-20 w-[250px] lg:w-[280px] xl:w-[300px] 2xl:w-[350px] bg-background/90 border-r border-border rtl:border-l rtl:border-r-0 shadow-sm flex-col h-full">
+      <div className="hidden md:flex inset-y-0 ltr:left-0 rtl:right-0 z-20 w-[250px] lg:w-[280px] xl:w-[300px] 2xl:w-[350px] bg-background/90 border-r border-border rtl:border-l rtl:border-r-0 shadow-sm flex-col">
         {SidebarContent}
       </div>
-      <div className="md:pl-[200px] lg:pl-[250px] xl:pl-[300px] 2xl:pl-[350px]">
+      {/* <div className="md:pl-[200px] lg:pl-[250px] xl:pl-[300px] 2xl:pl-[350px]"> */}
         {/* Your main content goes here */}
-      </div>
+      {/* </div> */}
       {/* Mobile drawer - with solid background & fixed position */}
       <Drawer open={isOpen} onOpenChange={setIsOpen}>
         <DrawerTrigger asChild>
@@ -565,6 +491,7 @@ const RenderChatSection: FC<RenderChatSectionProps> = memo(
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [editingChatId, setEditingChatId] = useState<string | null>(null);
     const [newTitle, setNewTitle] = useState('');
+    const [loadingChatId, setLoadingChatId] = useState<string | null>(null);
 
     const [optimisticChats, addOptimisticChat] = useOptimistic(
       chats,
@@ -593,6 +520,13 @@ const RenderChatSection: FC<RenderChatSectionProps> = memo(
       setNewTitle('');
     };
 
+    const handleChatClick = async (id: string, href: string) => {
+      setLoadingChatId(id);
+      onChatSelect(id);
+      await router.push(href, { scroll: false });
+      setLoadingChatId(null);
+    };
+
     if (optimisticChats.length === 0) return null;
 
     const { t } = useLanguage();
@@ -601,7 +535,7 @@ const RenderChatSection: FC<RenderChatSectionProps> = memo(
       <>
         <div className="px-3 mb-2 py-2 flex items-center">
           <div className="flex-grow border-t border-border/40" />
-          <span className="mx-2 text-xs text-muted-foreground">{title}</span>
+          <span className="mx-2 text-sm text-muted-foreground">{title}</span>
           <div className="flex-grow border-t border-border/40" />
         </div>
 
@@ -612,26 +546,32 @@ const RenderChatSection: FC<RenderChatSectionProps> = memo(
               currentParams.toString() ? '?' + currentParams.toString() : ''
             }`;
 
+            const isLoading = loadingChatId === id;
+
             return (
               <li key={id} className="relative group">
-                <Link
-                  href={href}
-                  prefetch={false}
-                  scroll={false}
+                <div
+                  onClick={() => handleChatClick(id, href)}
                   className={`
-                block px-2 py-1.5 text-sm rounded relative
-                hover:bg-muted/60 active:bg-muted transition-colors duration-150
-                ${currentChatId === id ? 'bg-muted/80' : ''}
-              `}
+                    block p-2 text-[15px] rounded-lg relative cursor-pointer
+                    hover:bg-neutral-200 active:bg-neutral-300 transition-colors duration-150
+                    ${currentChatId === id ? 'bg-neutral-300' : ''}
+                  `}
                   onMouseEnter={() => router.prefetch(href)}
-                  onClick={() => onChatSelect(id)}
                 >
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <span className="block truncate pr-6">
-                          {firstMessage}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          {isLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-primary flex-shrink-0" />
+                          ) : (
+                            <MessageSquare className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          )}
+                          <span className="block truncate pr-6">
+                            {firstMessage}
+                          </span>
+                        </div>
                       </TooltipTrigger>
                       <TooltipContent side="right" sideOffset={5}>
                         {firstMessage}
@@ -642,7 +582,12 @@ const RenderChatSection: FC<RenderChatSectionProps> = memo(
                   <div className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-6 w-6">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <MoreHorizontal className="h-3.5 w-3.5" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -658,14 +603,20 @@ const RenderChatSection: FC<RenderChatSectionProps> = memo(
                           <span>{t('Share')}</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleOpenRename(id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenRename(id);
+                          }}
                           className="text-sm"
                         >
                           <Edit className="mr-2 h-4 w-4" />
                           <span>{t('Rename')}</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleDeleteClick(id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteClick(id);
+                          }}
                           className="text-destructive text-sm"
                         >
                           <Trash className="mr-2 h-4 w-4" />
@@ -674,7 +625,7 @@ const RenderChatSection: FC<RenderChatSectionProps> = memo(
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                </Link>
+                </div>
               </li>
             );
           })}
@@ -693,7 +644,6 @@ const RenderChatSection: FC<RenderChatSectionProps> = memo(
                 const title = formData.get('title') as string;
 
                 startTransition(async () => {
-                  // Apply optimistic update immediately
                   addOptimisticChat({
                     id: chatId,
                     newTitle: title

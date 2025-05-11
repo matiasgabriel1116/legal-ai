@@ -32,14 +32,14 @@ export default function RootLayout({
   modal: ReactNode;
 }) {
   return (
-    <html lang="en" dir='ltr' suppressHydrationWarning>
+    <html lang="en" dir='ltr' suppressHydrationWarning style={{ height: '100%' }}>
       <RootErrorBoundary>
         <body
           className={inter.className}
           style={{
             display: 'flex',
             flexDirection: 'column',
-            minHeight: '100vh'
+            height: '100%'
           }}
         >
           <ThemeProvider
@@ -50,10 +50,12 @@ export default function RootLayout({
           >
             <LanguageProvider>
             {/* We pass the promise here and resolve it with react.use in the child to prevent the async request from blocking the UI */}
-              <NavBar session={getSession()} />
-              <main>{children}</main>
-              {modal}
-              <Footer />
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+                <NavBar session={getSession()} />
+                {children}
+                {modal}
+                <Footer />
+              </div>
               <Suspense fallback={null}>
                 <SnackbarMessages />
               </Suspense> 

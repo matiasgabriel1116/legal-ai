@@ -60,9 +60,9 @@ const Header: React.FC<HeaderProps> = ({ session }) => {
   return (
     <>
       {/* Desktop navigation */}
-      <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-xl border-b border-border h-12 hidden md:flex shadow-sm">
+      <header className="sticky top-0 z-50 p-2 w-full bg-background/80 backdrop-blur-xl border-b border-border hidden md:flex shadow-sm">
         <div className="flex items-center w-full h-full px-8 mx-auto">
-          <div className="flex items-center  p-16 md:p-16 lg:p-24">
+          <div className="flex items-center ml-24">
             <Link href="/" passHref>
               <Image
                 src="/img/logo.jpg"
