@@ -1,7 +1,7 @@
 import React, { FC, memo, useState } from 'react';
 import { format } from 'date-fns';
 import Link from 'next/link';
-import { useSearchParams, usePathname } from 'next/navigation';
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { useUpload } from '../context/uploadContext';
 import { deleteFilterTagAndDocumentChunks } from '../actions';
 import { decodeBase64, encodeBase64 } from '../lib/base64';
@@ -58,10 +58,18 @@ const RenderFilesSection: FC<RenderFilesSectionProps> = memo(
     ({ title, files, onFileSelect, onMutate }) => {
         const searchParams = useSearchParams();
         const pathname = usePathname();
+        const router = useRouter();
         const { selectedBlobs, setSelectedBlobs } = useUpload();
         const { t } = useLanguage();
 
         if (files.length === 0) return null;
+
+        const handleFileClick = (href: string, fileName: string) => {
+            if (onFileSelect) {
+                onFileSelect(fileName);
+            }
+            router.push(href, { scroll: false });
+        };
 
         return (
             <>
@@ -92,16 +100,10 @@ const RenderFilesSection: FC<RenderFilesSectionProps> = memo(
 
                         return (
                             <li key={file.name} className="relative group">
-                                <Link
-                                    href={href}
+                                <div
                                     className={`block p-2 text-[15px] rounded-lg relative
-                hover:bg-neutral-200 active:bg-neutral-300 transition-colors duration-150 ${isCurrentFile ? 'bg-muted/80' : ''
-                                        }`}
-                                    onClick={() => {
-                                        if (onFileSelect) {
-                                            onFileSelect(file.name);
-                                        }
-                                    }}
+                                        hover:bg-neutral-200 active:bg-neutral-300 transition-colors duration-150 
+                                        ${isCurrentFile ? 'bg-muted/80' : ''}`}
                                 >
                                     <TooltipProvider delayDuration={300}>
                                         <Tooltip>
@@ -126,10 +128,12 @@ const RenderFilesSection: FC<RenderFilesSectionProps> = memo(
                                                                 }
                                                             }}
                                                             className="border-primary border-2"
-                                                            onClick={(e) => e.stopPropagation()}
                                                         />
                                                     </div>
-                                                    <div className="overflow-hidden">
+                                                    <div 
+                                                        className="overflow-hidden flex-grow cursor-pointer"
+                                                        onClick={() => handleFileClick(href, file.name)}
+                                                    >
                                                         <p className="text-sm font-medium text-foreground truncate">
                                                             {file.name.replace(/_/g, ' ')}
                                                         </p>
@@ -161,7 +165,7 @@ const RenderFilesSection: FC<RenderFilesSectionProps> = memo(
                                             <TooltipContent side="right">{file.name}</TooltipContent>
                                         </Tooltip>
                                     </TooltipProvider>
-                                </Link>
+                                </div>
                             </li>
                         );
                     })}
