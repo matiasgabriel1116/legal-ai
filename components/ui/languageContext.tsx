@@ -340,7 +340,7 @@ export const translations = {
     'Admin Uploads': 'تحميلات الإدارة',
     'User Uploads': 'تحميلات المستخدم',
     'Document Uploads Over Time': 'تحميل المستندات بمرور الوقت',
-    'Supported formats: PDF, DOCX': 'التنسيقات المدعومة: PDF، DOCX',
+    'Supported formats: PDF, DOCX, JPG, PNG': 'التنسيقات المدعومة: PDF، DOCX، JPG، PNG',
     'Max': 'الأعلى',
     'files': 'الملفات',
     'Uploading': 'جاري التحميل',
@@ -355,10 +355,10 @@ export const translations = {
     'User deleted successfully': 'تم حذف المستخدم بنجاح',
     'Failed to delete user': 'فشل في حذف المستخدم'
   }
-};
+} as const;
 
-type Language = 'en' | 'ar';
-type TranslationKey = keyof typeof translations.en;
+export type Language = 'en' | 'ar';
+export type TranslationKey = keyof typeof translations.en;
 
 interface LanguageContextType {
   language: Language;
@@ -403,7 +403,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   };
 
   const t = (key: TranslationKey): string => {
-    return translations[state.language][key] || key;
+    return (translations[state.language] as Record<string, string>)[key] || key;
   };
 
   // Don't render until language is initialized
